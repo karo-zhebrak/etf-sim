@@ -1,0 +1,10 @@
+# Python 3.12. Install with: python3.12 -m venv pipeline/.venv && pipeline/.venv/bin/pip install -r pipeline/requirements.txt
+httpx==0.28.1
+pdfplumber==0.11.10
+psycopg[binary]==3.3.7
+pydantic==2.14.2
+PyYAML==6.0.3
+openpyxl==3.1.5     # HSBC price history (.xlsx)
+xlrd==2.0.2         # HSBC full holdings (legacy .xls)
+python-dotenv==1.2.4
+pytest==9.2.0

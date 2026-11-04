@@ -1,0 +1,128 @@
+# ETF universe for the monthly data pipeline.
+# Tickers and names here are labels only and are NOT trusted: the pipeline takes
+# tickers, currency and other facts from the downloaded issuer files, and fails an
+# ETF if the ISIN in its file does not match the ISIN below.
+#
+# product_url was verified on 2026-11-03 by checking the page belongs to the ISIN:
+#   iShares: the page data pairs the ISIN with this product id ("ISIN~SEDOL~productId").
+#   HSBC: the page's shareId equals the ISIN. HSBC URLs use the individual-investor
+#   site; the institutional pages require declaring you are a Professional Client.
+# Scope: accumulating share classes only (decided 2026-11-03). Distributing funds are out of
+# scope, so each fund's NAV history is its total-return series.
+# Download URLs are not stored here: the pipeline discovers them from each page at run time.
+
+etfs:
+  - issuer: ishares
+    ticker: SWDA
+    isin: IE00B4L5Y983
+    name: "Core MSCI World (Acc)"
+    issuer_fund_name: "iShares Core MSCI World UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/251882
+
+
+  - issuer: ishares
+    ticker: SSAC
+    isin: IE00B6R52259
+    name: "MSCI ACWI (Acc)"
+    issuer_fund_name: "iShares MSCI All Country World UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/251850
+
+
+  - issuer: ishares
+    ticker: CSPX
+    isin: IE00B5BMR087
+    name: "Core S&P 500 (Acc)"
+    issuer_fund_name: "iShares Core S&P 500 UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/253743
+
+
+  - issuer: ishares
+    ticker: CNDX
+    isin: IE00B53SZB19
+    name: "Nasdaq 100 (Acc)"
+    issuer_fund_name: "iShares NASDAQ 100 UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/253741
+
+
+  - issuer: ishares
+    ticker: CUKX
+    isin: IE00B53HP851
+    name: "Core FTSE 100 (Acc)"
+    issuer_fund_name: "iShares Core FTSE 100 UCITS ETF GBP (Acc)"
+    product_url: https://www.ishares.com/uk/individual/en/products/253716
+
+  - issuer: ishares
+    ticker: SMEA
+    isin: IE00B4K48X80
+    name: "Core MSCI Europe (Acc)"
+    issuer_fund_name: "iShares Core MSCI Europe UCITS ETF EUR (Acc)"
+    product_url: https://www.ishares.com/uk/individual/en/products/251861
+
+
+  - issuer: ishares
+    ticker: IJPA
+    isin: IE00B4L5YX21
+    name: "Core MSCI Japan IMI (Acc)"
+    issuer_fund_name: "iShares Core MSCI Japan IMI UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/251867
+    notes: "Issuer page lists ticker SJPA (USD line); IJPA is the GBP line. Tickers come from the data file."
+
+
+  - issuer: ishares
+    ticker: EMIM
+    isin: IE00BKM4GZ66
+    name: "Core MSCI EM IMI (Acc)"
+    issuer_fund_name: "iShares Core MSCI EM IMI UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/264659
+    notes: "Issuer page lists ticker EIMI (USD line); EMIM is the GBP line. Tickers come from the data file."
+
+
+  - issuer: ishares
+    ticker: AGBP
+    isin: IE00BDBRDM35
+    name: "Core Global Aggregate Bond GBP Hedged (Acc)"
+    issuer_fund_name: "iShares Core Global Aggregate Bond UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/291770
+    notes: "Issuer page title shows AGGH. Tickers come from the data file."
+
+
+  - issuer: ishares
+    ticker: DPYA
+    isin: IE00BFM6T921
+    name: "Developed Markets Property Yield (Acc)"
+    issuer_fund_name: "iShares Developed Markets Property Yield UCITS ETF USD (Acc)"
+    product_url: https://www.ishares.com/uk/individual/en/products/297188
+    notes: "USD-denominated accumulating class, unhedged. Tickers come from the data file."
+
+  - issuer: ishares
+    ticker: SGLN
+    isin: IE00B4ND3602
+    name: "Physical Gold ETC"
+    issuer_fund_name: "iShares Physical Gold ETC"
+    product_url: https://www.ishares.com/uk/individual/en/products/258441
+
+
+  - issuer: hsbc
+    ticker: HSWO
+    isin: IE00BKY59K37
+    name: "Developed World Sustainable Equity (Acc)"
+    issuer_fund_name: "HSBC DEVELOPED WORLD SCREENED EQUITY UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie00bky59k37
+    notes: "Issuer now names this fund 'Developed World Screened Equity' (config said 'Sustainable')."
+
+
+  - issuer: hsbc
+    ticker: HNSC
+    isin: IE000YDZG487
+    name: "Nasdaq Global Semiconductor (Acc)"
+    issuer_fund_name: "HSBC NASDAQ GLOBAL SEMICONDUCTOR UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie000ydzg487
+
+
+  - issuer: hsbc
+    ticker: HAGG
+    isin: IE000XGNMWE1
+    name: "Bloomberg Global Sustainable Aggregate 1-3 Year Bond (Acc)"
+    issuer_fund_name: "HSBC BLOOMBERG GLOBAL ESG AGGREGATE 1-3 YEAR BOND UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie000xgnmwe1
+    notes: "Issuer now names this fund 'Bloomberg Global ESG Aggregate 1-3 Year Bond' (config said 'Sustainable')."

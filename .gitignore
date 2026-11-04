@@ -32,6 +32,14 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# data pipeline: raw issuer files must never be committed (redistribution)
+/pipeline/raw/
+/pipeline/samples/
+/pipeline/.venv/
+__pycache__/
+.pytest_cache/
 
 # vercel
 .vercel
