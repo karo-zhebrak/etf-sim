@@ -13,16 +13,47 @@ Keep these in mind when building features:
 - **Educational, not advisory.** Present simulations as illustrations. Do not recommend specific investments or tell users what they should buy, and do not imply that simulated or past performance predicts future returns.
 - **UK-first.** Default to GBP and UK terminology, formats and investor context.
 
-## Stack status
+## Current status
 
 | Layer | Status |
 | --- | --- |
 | Next.js 16 (App Router), React 19, TypeScript | In place |
 | Tailwind CSS 4, shadcn/ui | In place |
-| Supabase (data and auth) | Planned: not installed or configured |
+| Supabase Postgres (data) | In place: schema applied, data loaded. The Next.js app does not connect to it yet (no Supabase client installed) |
+| Supabase Auth | Planned: not configured |
+| Monthly data pipeline (`pipeline/`) | In place: Python, runs locally and via GitHub Actions on the 10th of each month |
 | Vercel (hosting) | Planned: not linked or configured |
 
-The app is still the default starter page. There are no tests or test runner yet.
+The app is still the default starter page. The only tests are the pipeline's pytest suite; the app has no tests or test runner yet.
+
+## Data sources
+
+All market data comes from the monthly pipeline. See `pipeline/README.md` for how it works and what to do when an issuer changes their files.
+
+- **Issuer files**, fetched from each fund's product page:
+  - iShares: fund data file (SpreadsheetML XML) and factsheet PDF.
+  - HSBC: price history (`.xlsx`), factsheet PDF and full holdings (`.xls`).
+- **FX:** ECB euro reference rates, with full history. Reuse is allowed with attribution, so credit the European Central Bank wherever FX-converted figures appear.
+- **Universe:** `pipeline/config/etf_universe.yaml`, currently 14 ETFs (11 iShares, 3 HSBC). Only accumulating share classes are in scope, plus a no-income gold ETC. Distributing classes fail validation.
+- **Raw issuer files are never committed** (`pipeline/raw/` and `pipeline/samples/` are gitignored). They are kept gzipped in the private Supabase Storage bucket `raw-issuer-files`, and only the last 3 months are kept. Test fixtures must be synthetic.
+
+## Data model
+
+The schema lives in `supabase/migrations/`. Change it only through new migration files.
+
+- **History is kept.** Snapshot tables are keyed by the as-of date printed in the issuer file: `fund_fact_snapshots`, `performance_returns`, `exposures` and `holdings`. Use the `latest_*` views for current values.
+- **NAV is total return.** Every fund is accumulating, so `nav_prices` already includes reinvested income, and there is no distributions table. `total_return_index` holds only the iShares growth-of-10,000 series (fund and benchmark); HSBC publishes none.
+- **Native currencies.** Series are stored in the share class currency (mostly USD; some GBP and EUR). Convert in queries: `nav_gbp` gives NAVs in GBP, and `fx_gbp` gives the GBP value of each currency per ECB date. Do not store converted values.
+- **Flagged data.** Points with `quality = 'flagged'` are suspect issuer data, such as the SWDA benchmark rebasing glitch. Exclude them from charts and calculations; `nav_gbp` already does. Details are in `data_flags`.
+- **Labels.** Use `exposures.label_normalised` (GICS-style sectors, ISO countries) to compare funds across issuers, not the raw `label`.
+- **Partial data.** `holdings.is_partial = true` means only a top-10 list was available. HSBC full holdings have no sector.
+- **Access (RLS).** Signed-in (`authenticated`) users can read the data tables and views. `anon` can read nothing. This is by design: the app requires sign-in, so do not add anonymous read access. Only the service role writes, and that is the pipeline. `pipeline_runs`, `source_files` and `data_flags` are not readable from the app. Never use the service role key in the Next.js app.
+- **Tables:**
+  - Identity: `etfs`, `listings` (one share class can have several tickers and currencies).
+  - Snapshots: `fund_fact_snapshots`, `performance_returns`, `exposures`, `holdings`.
+  - Series: `nav_prices`, `total_return_index`, `fx_rates`.
+  - Reference: `label_mappings`.
+  - Bookkeeping: `data_flags`, `source_files`, `pipeline_runs`.
 
 ## Commands
 
@@ -33,6 +64,15 @@ npm run start    # Serve the production build
 npm run lint     # ESLint
 npx tsc --noEmit # Type-check
 npx shadcn@latest add <component>  # Add a shadcn/ui component to components/ui/
+
+# Data pipeline (Python 3.12, run from the repo root; secrets in .env, see .env.example)
+python3.12 -m venv pipeline/.venv && pipeline/.venv/bin/pip install -r pipeline/requirements.txt
+pipeline/.venv/bin/python -m pipeline run                   # fetch, parse, validate, load
+pipeline/.venv/bin/python -m pipeline run --dry-run         # no database or Storage writes
+pipeline/.venv/bin/python -m pipeline run --isin <ISIN>     # one ETF (or --issuer ishares|hsbc)
+pipeline/.venv/bin/python -m pipeline run --skip-download   # re-parse stored raw files
+pipeline/.venv/bin/python -m pytest pipeline/tests -q       # pipeline tests
+supabase db push --db-url "$SUPABASE_DB_URL"                # apply new migrations
 ```
 
 ## Project-specific notes
