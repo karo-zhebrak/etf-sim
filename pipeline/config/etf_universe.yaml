@@ -77,14 +77,6 @@ etfs:
     notes: "Issuer page lists ticker EIMI (USD line); EMIM is the GBP line. Tickers come from the data file."
 
 
-  - issuer: ishares
-    ticker: AGBP
-    isin: IE00BDBRDM35
-    name: "Core Global Aggregate Bond GBP Hedged (Acc)"
-    issuer_fund_name: "iShares Core Global Aggregate Bond UCITS ETF"
-    product_url: https://www.ishares.com/uk/individual/en/products/291770
-    notes: "Issuer page title shows AGGH. Tickers come from the data file."
-
 
   - issuer: ishares
     ticker: DPYA
