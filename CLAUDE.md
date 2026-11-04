@@ -19,12 +19,12 @@ Keep these in mind when building features:
 | --- | --- |
 | Next.js 16 (App Router), React 19, TypeScript | In place |
 | Tailwind CSS 4, shadcn/ui | In place |
-| Supabase Postgres (data) | In place: schema applied, data loaded. The Next.js app does not connect to it yet (no Supabase client installed) |
-| Supabase Auth | Planned: not configured |
+| Supabase Postgres (data) | In place: schema applied, data loaded. The app reads it as the signed-in user |
+| Supabase Auth | In place: email and password, with email confirmation and password reset (`@supabase/ssr`) |
 | Monthly data pipeline (`pipeline/`) | In place: Python, runs locally and via GitHub Actions on the 10th of each month |
 | Vercel (hosting) | Planned: not linked or configured |
 
-The app is still the default starter page. The only tests are the pipeline's pytest suite; the app has no tests or test runner yet.
+The app has sign-in pages and a placeholder home page; no simulator features yet. The only tests are the pipeline's pytest suite; the app has no tests or test runner yet.
 
 ## Data sources
 
@@ -34,7 +34,7 @@ All market data comes from the monthly pipeline. See `pipeline/README.md` for ho
   - iShares: fund data file (SpreadsheetML XML) and factsheet PDF.
   - HSBC: price history (`.xlsx`), factsheet PDF and full holdings (`.xls`).
 - **FX:** ECB euro reference rates, with full history. Reuse is allowed with attribution, so credit the European Central Bank wherever FX-converted figures appear.
-- **Universe:** `pipeline/config/etf_universe.yaml`, currently 14 ETFs (11 iShares, 3 HSBC). Only accumulating share classes are in scope, plus a no-income gold ETC. Distributing classes fail validation.
+- **Universe:** `pipeline/config/etf_universe.yaml`, currently 13 ETFs (10 iShares, 3 HSBC). Only accumulating share classes are in scope, plus a no-income gold ETC. Distributing classes fail validation.
 - **Raw issuer files are never committed** (`pipeline/raw/` and `pipeline/samples/` are gitignored). They are kept gzipped in the private Supabase Storage bucket `raw-issuer-files`, and only the last 3 months are kept. Test fixtures must be synthetic.
 
 ## Data model
@@ -54,6 +54,15 @@ The schema lives in `supabase/migrations/`. Change it only through new migration
   - Series: `nav_prices`, `total_return_index`, `fx_rates`.
   - Reference: `label_mappings`.
   - Bookkeeping: `data_flags`, `source_files`, `pipeline_runs`.
+
+## Authentication
+
+- **Every page needs sign-in** except `/login`, `/signup`, `/forgot-password` and `/auth/*`. `proxy.ts` refreshes the session cookie and redirects signed-out visitors to `/login?next=…`. Add any new public route to `PUBLIC_PATHS` there.
+- **The proxy is only a convenience gate.** Check the session again in every Server Action and Route Handler (`supabase.auth.getClaims()`), and RLS protects the data. Use `getCurrentUser()` from `lib/auth.ts` in Server Components.
+- **Supabase clients:** use `createClient()` from `lib/supabase/server.ts` on the server. It reads cookies, so with Cache Components any component that uses it (or `getCurrentUser()`) must render inside `<Suspense>`. Keep session reads out of layouts' top level.
+- **Redirects:** pass any user-supplied redirect target through `safeNextPath()` (`lib/auth.ts`).
+- **Env:** the app uses `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` only (see `.env.example`).
+- **Email links:** auth emails link to `/auth/callback`, which exchanges the code for a session and redirects to `next`. In Supabase Auth settings, the site URL and the `/**` redirect URLs must cover every environment.
 
 ## Commands
 

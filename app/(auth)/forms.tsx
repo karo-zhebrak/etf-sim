@@ -1,0 +1,128 @@
+"use client"
+
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import { useActionState } from "react"
+
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+
+import {
+  requestPasswordReset, signIn, signUp, updatePassword, type FormState,
+} from "./actions"
+
+const initial: FormState = {}
+
+function Feedback({ state }: { state: FormState }) {
+  if (state.error) {
+    return <p role="alert" className="text-sm text-destructive">{state.error}</p>
+  }
+  if (state.message) {
+    return <p role="status" className="text-sm text-muted-foreground">{state.message}</p>
+  }
+  return null
+}
+
+function EmailField({ defaultValue }: { defaultValue?: string }) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="email">Email address</Label>
+      <Input id="email" name="email" type="email" autoComplete="email" required defaultValue={defaultValue} />
+    </div>
+  )
+}
+
+function PasswordField({ name = "password", label = "Password", autoComplete, hint }: {
+  name?: string; label?: string; autoComplete: string; hint?: string
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={name}>{label}</Label>
+      <Input id={name} name={name} type="password" autoComplete={autoComplete} required
+             minLength={autoComplete === "new-password" ? 8 : undefined} aria-describedby={hint ? `${name}-hint` : undefined} />
+      {hint && <p id={`${name}-hint`} className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  )
+}
+
+export function LoginForm() {
+  const params = useSearchParams()
+  const [state, action, pending] = useActionState(signIn, initial)
+  const linkError = params.get("error") === "link"
+  return (
+    <form action={action} className="space-y-4">
+      <input type="hidden" name="next" value={params.get("next") ?? "/"} />
+      {linkError && !state.error && (
+        <p role="alert" className="text-sm text-destructive">
+          That link is invalid or has expired. Sign in, or request a new link.
+        </p>
+      )}
+      <EmailField defaultValue={state.email} />
+      <PasswordField autoComplete="current-password" />
+      <Feedback state={state} />
+      <Button type="submit" className="w-full" disabled={pending}>
+        {pending ? "Signing in…" : "Sign in"}
+      </Button>
+      <div className="flex justify-between text-sm">
+        <Link href="/forgot-password" className="text-muted-foreground underline-offset-4 hover:underline">
+          Forgotten your password?
+        </Link>
+        <Link href="/signup" className="underline-offset-4 hover:underline">Create an account</Link>
+      </div>
+    </form>
+  )
+}
+
+export function SignupForm() {
+  const [state, action, pending] = useActionState(signUp, initial)
+  if (state.message) {
+    return <Feedback state={state} />
+  }
+  return (
+    <form action={action} className="space-y-4">
+      <EmailField defaultValue={state.email} />
+      <PasswordField autoComplete="new-password" hint="At least 8 characters." />
+      <Feedback state={state} />
+      <Button type="submit" className="w-full" disabled={pending}>
+        {pending ? "Creating account…" : "Create account"}
+      </Button>
+      <p className="text-center text-sm text-muted-foreground">
+        Already have an account? <Link href="/login" className="text-foreground underline-offset-4 hover:underline">Sign in</Link>
+      </p>
+    </form>
+  )
+}
+
+export function ForgotPasswordForm() {
+  const [state, action, pending] = useActionState(requestPasswordReset, initial)
+  if (state.message) {
+    return <Feedback state={state} />
+  }
+  return (
+    <form action={action} className="space-y-4">
+      <EmailField defaultValue={state.email} />
+      <Feedback state={state} />
+      <Button type="submit" className="w-full" disabled={pending}>
+        {pending ? "Sending…" : "Send reset link"}
+      </Button>
+      <p className="text-center text-sm">
+        <Link href="/login" className="text-muted-foreground underline-offset-4 hover:underline">Back to sign in</Link>
+      </p>
+    </form>
+  )
+}
+
+export function UpdatePasswordForm() {
+  const [state, action, pending] = useActionState(updatePassword, initial)
+  return (
+    <form action={action} className="space-y-4">
+      <PasswordField label="New password" autoComplete="new-password" hint="At least 8 characters." />
+      <PasswordField name="confirm" label="Confirm new password" autoComplete="new-password" />
+      <Feedback state={state} />
+      <Button type="submit" className="w-full" disabled={pending}>
+        {pending ? "Saving…" : "Save new password"}
+      </Button>
+    </form>
+  )
+}
