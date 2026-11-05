@@ -10,7 +10,7 @@ export default function SignupPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create an account</CardTitle>
+        <CardTitle><h1 className="text-base font-medium">Create an account</h1></CardTitle>
         <CardDescription>We&apos;ll email you a link to confirm your address.</CardDescription>
       </CardHeader>
       <CardContent>

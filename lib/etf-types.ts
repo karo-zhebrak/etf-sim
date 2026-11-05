@@ -23,11 +23,15 @@ export const ASSET_CLASS_LABELS: Record<AssetClass, string> = {
 const KEEP_UPPER = new Set([
   "HSBC", "ETF", "ETC", "UCITS", "ESG", "MSCI", "FTSE", "EPRA", "NAREIT", "USA", "UK", "US", "EM", "IMI",
   "ACWI", "S&P", "GBP", "USD", "EUR", "SRI", "REIT", "REITS", "EMU",
+  // Company names usually written in capitals (holdings lists).
+  "NVIDIA", "ASML", "SAP", "BP", "BAE", "SK", "AMD", "IBM", "HDFC", "ICICI", "ABB", "UBS", "ING", "AXA", "BNP",
+  "LVMH", "GSK", "RELX", "KLA", "TSMC", "BHP", "AIA", "DBS", "NXP", "CSL", "RWE", "BBVA", "ANZ", "NAB", "JD",
 ])
 const NAME_CASE: Record<string, string> = { NASDAQ: "Nasdaq", EX: "ex" }
 
-/** HSBC factsheets print fund names in capitals ("HSBC MSCI WORLD UCITS ETF"). Show those
- * in title case, keeping acronyms ("HSBC MSCI World UCITS ETF"). Mixed-case names are kept. */
+/** Names printed in capitals (HSBC fund names, iShares holdings) shown in title case,
+ * keeping acronyms ("HSBC MSCI World UCITS ETF", "Amazon.com Inc", "NVIDIA"). Only the first
+ * letter of each space-separated word is capitalised. Mixed-case names are kept. */
 export function displayName(name: string): string {
   if (name !== name.toUpperCase()) return name
   return name

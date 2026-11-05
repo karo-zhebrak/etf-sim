@@ -124,13 +124,31 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
     }
   }, [draft, step, dirty, id])
 
-  // Warn before closing or reloading the tab with unsaved changes.
+  // Warn before leaving with unsaved changes: closing or reloading the tab (browser prompt),
+  // or following a link elsewhere in the app. Links are caught in the capture phase, before
+  // Next.js handles them, and a cancelled click never navigates. (The draft is also kept in
+  // session storage, so even an accepted navigation can be undone by coming back.)
   useEffect(() => {
     const hasChanges = id === null ? !isEmptyDraft(draft) : !sameDraft(draft, saved)
     if (!hasChanges) return
     const onBeforeUnload = (e: BeforeUnloadEvent) => e.preventDefault()
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      const link = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null
+      if (!link || link.target === "_blank" || link.hasAttribute("download")) return
+      const url = new URL(link.href, window.location.href)
+      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return
+      if (!window.confirm("You have unsaved changes to this portfolio. Leave without saving?")) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+    }
     window.addEventListener("beforeunload", onBeforeUnload)
-    return () => window.removeEventListener("beforeunload", onBeforeUnload)
+    document.addEventListener("click", onClick, true)
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload)
+      document.removeEventListener("click", onClick, true)
+    }
   }, [draft, saved, id])
 
   function updateAmountText(text: string) {

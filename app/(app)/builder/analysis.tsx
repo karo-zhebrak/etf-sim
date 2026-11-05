@@ -107,6 +107,13 @@ export function AnalysisStep({ isins, fractions, amount, colors, etfOptions, cur
 
   return (
     <div className="space-y-4">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold tracking-tight">Portfolio analysis</h2>
+        <p className="text-sm text-muted-foreground">
+          How your selection behaved in the past and what it holds today. These are illustrations for learning,
+          not a forecast or a recommendation.
+        </p>
+      </div>
       {/* Filters: one row above the charts they scope. */}
       <div className="flex flex-wrap items-center gap-3">
         <div role="group" aria-label="Time range" className="inline-flex rounded-lg border p-1">

@@ -113,7 +113,7 @@ export function DeletePortfolioDialog({ id, name }: { id: string; name: string }
           <ErrorText state={state} />
           <AlertDialogFooter>
             <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
-            <Button type="submit" variant="destructive" disabled={pending}>
+            <Button type="submit" disabled={pending} className="bg-destructive text-white hover:bg-destructive/90">
               {pending ? "Deleting…" : "Delete portfolio"}
             </Button>
           </AlertDialogFooter>

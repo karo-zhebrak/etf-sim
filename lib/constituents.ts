@@ -7,7 +7,7 @@
 // prefix rule for truncated names). Share classes of one company (Alphabet A and C) are
 // combined. The result is labelled approximate in the UI.
 
-import type { AssetClass } from "@/lib/etf-types"
+import { type AssetClass, displayName } from "@/lib/etf-types"
 
 export type Holding = { name: string; ticker: string | null; isin: string | null; weight: number }
 
@@ -46,11 +46,6 @@ export function normaliseName(name: string): string {
   return words.join(" ")
 }
 
-/** All-capitals names are shown in title case ("TAIWAN SEMICONDUCTOR" -> "Taiwan Semiconductor"). */
-function niceName(name: string): string {
-  if (name !== name.toUpperCase()) return name
-  return name.toLowerCase().replace(/\b([a-z])/g, (m) => m.toUpperCase())
-}
 
 type Group = { key: string; names: Set<string>; isins: Set<string>; weight: number; contributions: Map<string, number> }
 
@@ -121,7 +116,7 @@ export function combineConstituents(funds: FundHoldings[], fractions: number[]):
       const best = names.find((n) => n !== n.toUpperCase()) ?? plain[0] ?? names.sort((a, b) => b.length - a.length)[0]
       return {
         key: g.key,
-        label: g.key === "__GOLD__" ? "Physical gold" : niceName(best).replace(/\s+Class [A-Z]$/i, ""),
+        label: g.key === "__GOLD__" ? "Physical gold" : displayName(best).replace(/\s+Class [A-Z]$/i, ""),
         weight: g.weight,
         contributions: [...g.contributions].map(([isin, weight]) => ({ isin, weight })).sort((a, b) => b.weight - a.weight),
       }

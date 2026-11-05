@@ -11,7 +11,7 @@ export default function LoginPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sign in</CardTitle>
+        <CardTitle><h1 className="text-base font-medium">Sign in</h1></CardTitle>
         <CardDescription>Sign in to use the simulator.</CardDescription>
       </CardHeader>
       <CardContent>

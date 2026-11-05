@@ -99,7 +99,7 @@ export function CorrelationMatrix({ series, start, funds, currency }: {
                         onBlur={() => setActive(null)}
                         className={cn(
                           "flex h-12 w-14 items-center justify-center rounded tabular-nums sm:w-16",
-                          diagonal && "text-muted-foreground",
+                          diagonal && "text-[#52514e]",
                           !diagonal && "cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                           active && !diagonal && active[0] === i && active[1] === j && "ring-2 ring-foreground/60",
                         )}

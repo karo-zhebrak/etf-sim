@@ -12,7 +12,7 @@ export default function UpdatePasswordPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Choose a new password</CardTitle>
+        <CardTitle><h1 className="text-base font-medium">Choose a new password</h1></CardTitle>
         <CardDescription>You&apos;ll stay signed in after saving it.</CardDescription>
       </CardHeader>
       <CardContent>

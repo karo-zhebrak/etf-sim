@@ -40,7 +40,7 @@ describe("combineConstituents", () => {
     expect(byLabel["Apple Inc"]).toBeCloseTo(5) // 0.5×6 + 0.5×4
     expect(byLabel["Alphabet Inc"]).toBeCloseTo(2.25) // 0.5×(2+1.5) + 0.5×1
     expect(byLabel["Taiwan Semiconductor Manufacturing Co Ltd"]).toBeCloseTo(1.5) // truncated iShares name merged
-    expect(byLabel["Apple Hospitality Reit Inc"]).toBeCloseTo(0.05) // not merged into Apple
+    expect(byLabel["Apple Hospitality REIT Inc"]).toBeCloseTo(0.05) // not merged into Apple
     const apple = rows.find((r) => r.label === "Apple Inc")!
     expect(apple.contributions).toEqual([{ isin: "SWDA", weight: 3 }, { isin: "HSWO", weight: 2 }])
   })
@@ -57,6 +57,11 @@ describe("combineConstituents", () => {
     const rows = combineConstituents([f], [1])
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ label: "Samsung Electronics Ltd", weight: 7 })
+  })
+
+  it("shows capitalised names in readable case, keeping acronyms", () => {
+    const f = fund("CSPX", [["AMAZON.COM INC", null, 4], ["NVIDIA", null, 3], ["ELI LILLY", null, 2]])
+    expect(combineConstituents([f], [1]).map((r) => r.label)).toEqual(["Amazon.com Inc", "NVIDIA", "Eli Lilly"])
   })
 
   it("matches by ISIN when names differ", () => {

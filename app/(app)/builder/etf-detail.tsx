@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { DISTRIBUTION_LABELS, type EtfDetail, type EtfOption, REPLICATION_LABELS } from "@/lib/etf-types"
+import { displayName, DISTRIBUTION_LABELS, type EtfDetail, type EtfOption, REPLICATION_LABELS } from "@/lib/etf-types"
 import { MAX_ETFS } from "@/lib/portfolio-rules"
 
 import { loadEtfDetail } from "./actions"
@@ -150,7 +150,7 @@ function DetailBody({ detail }: { detail: EtfDetail }) {
                 <tr key={`${h.name}-${h.isin ?? i}`} className="border-b last:border-0">
                   <td className="py-1.5 text-muted-foreground tabular-nums">{i + 1}</td>
                   <td className="py-1.5">
-                    {h.name}
+                    {displayName(h.name)}
                     {h.isin && <span className="ml-2 font-mono text-xs text-muted-foreground">{h.isin}</span>}
                   </td>
                   <td className="py-1.5 text-right tabular-nums">{pctFmt.format(h.weight)}%</td>
