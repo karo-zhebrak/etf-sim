@@ -35,7 +35,13 @@ export async function signIn(_: FormState, formData: FormData): Promise<FormStat
     if (error.code === "email_not_confirmed") {
       return { error: "Please confirm your email address first. Check your inbox for the link.", email }
     }
-    return { error: "Incorrect email address or password.", email }
+    if (error.code === "invalid_credentials") {
+      return { error: "Incorrect email address or password.", email }
+    }
+    // Anything else is a configuration or service problem (e.g. a wrong API key), not the
+    // user's password: log the real cause for the server logs and say so honestly.
+    console.error("signIn failed:", error.status, error.code, error.message)
+    return { error: "We couldn't sign you in right now. Please try again in a moment.", email }
   }
   redirect(safeNextPath(formData.get("next")))
 }
@@ -54,6 +60,7 @@ export async function signUp(_: FormState, formData: FormData): Promise<FormStat
     options: { emailRedirectTo: `${await siteOrigin()}/auth/callback?next=/` },
   })
   if (error) {
+    console.error("signUp failed:", error.status, error.code, error.message)
     if (error.code === "weak_password") return { error: "That password is too weak. Try a longer one.", email }
     if (error.code === "over_email_send_rate_limit") {
       return { error: "Too many emails sent. Please wait a few minutes and try again.", email }
@@ -74,6 +81,7 @@ export async function requestPasswordReset(_: FormState, formData: FormData): Pr
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${await siteOrigin()}/auth/callback?next=/update-password`,
   })
+  if (error) console.error("requestPasswordReset failed:", error.status, error.code, error.message)
   if (error?.code === "over_email_send_rate_limit") {
     return { error: "Too many emails sent. Please wait a few minutes and try again.", email }
   }
