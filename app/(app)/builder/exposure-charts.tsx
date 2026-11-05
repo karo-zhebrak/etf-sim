@@ -20,6 +20,8 @@ const ASSET_COLORS: Record<string, string> = {
 }
 const pct = new Intl.NumberFormat("en-GB", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 const fmtPct = (v: number) => `${pct.format(v)}%`
+/** Small but non-zero shares read "<0.1%" rather than a misleading "0.0%". */
+const fmtShare = (v: number) => (v > 0 && v < 0.05 ? "<0.1%" : fmtPct(v))
 
 /** Loaded breakdowns per selection, kept for the browser session (same for every user). */
 const exposureCache = new Map<string, FundExposure[]>()
@@ -184,7 +186,7 @@ function SectorCard({ data, fractions, funds }: { data: FundExposure[]; fraction
 
 /** Horizontal bars, one per row, scaled to the largest row. Each row is a button that
  * reveals which ETFs contribute to it. */
-function BarList({ rows, funds, label }: { rows: CombinedRow[]; funds: Map<string, FundLabel>; label: string }) {
+export function BarList({ rows, funds, label }: { rows: CombinedRow[]; funds: Map<string, FundLabel>; label: string }) {
   const [open, setOpen] = useState<string | null>(null)
   const max = Math.max(...rows.map((r) => r.weight), 0)
   return (
@@ -215,7 +217,7 @@ function BarList({ rows, funds, label }: { rows: CombinedRow[]; funds: Map<strin
                     <li key={c.isin} className="flex items-center gap-2">
                       <span className="size-2 shrink-0 rounded-full" style={{ background: f?.color }} aria-hidden />
                       <span className="min-w-0 flex-1 truncate text-muted-foreground">{f?.name ?? c.isin}</span>
-                      <span className="tabular-nums">{fmtPct(c.weight)}</span>
+                      <span className="tabular-nums">{fmtShare(c.weight)}</span>
                     </li>
                   )
                 })}

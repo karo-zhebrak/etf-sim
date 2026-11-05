@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth"
 import {
   type AssetClass, displayName, type Distribution, type EtfDetail, type EtfOption, type Replication,
 } from "@/lib/etf-types"
+import type { FundHoldings } from "@/lib/constituents"
 import type { FundExposure } from "@/lib/exposure"
 import { isRealHolding } from "@/lib/holdings-rules"
 import { createClient } from "@/lib/supabase/server"
@@ -97,6 +98,40 @@ export async function getExposures(isins: string[]): Promise<FundExposure[]> {
       countries: toRows("country"),
       sectorsAsOf: pick("sector")[0]?.as_of ?? null,
       countriesAsOf: pick("country")[0]?.as_of ?? null,
+    }
+  })
+}
+
+const TOP_HOLDINGS_PER_FUND = 100
+
+/** Each ETF's largest real holdings (cash, FX hedges, futures removed), for the combined
+ * constituents analysis. Expects the caller to have authorized the request. */
+export async function getTopHoldings(isins: string[]): Promise<FundHoldings[]> {
+  const list = isins.filter((i) => ISIN_RE.test(i))
+  if (list.length === 0) return []
+  const supabase = await createClient()
+  const [etfs, ...perFund] = await Promise.all([
+    supabase.from("etfs").select("isin, asset_class").in("isin", list),
+    ...list.map((isin) =>
+      supabase.from("latest_holdings").select("name, issuer_ticker, security_isin, asset_class, weight, as_of")
+        .eq("isin", isin).not("weight", "is", null).order("weight", { ascending: false })
+        // Over-fetch so that excluded lines still leave enough real holdings.
+        .limit(TOP_HOLDINGS_PER_FUND + 50)),
+  ])
+  if (etfs.error) throw new Error(`Could not load ETFs: ${etfs.error.message}`)
+  const assetClass = new Map(etfs.data.map((e) => [e.isin, e.asset_class as AssetClass | null]))
+  return list.map((isin, i) => {
+    const res = perFund[i]
+    if (res.error) throw new Error(`Could not load holdings: ${res.error.message}`)
+    const real = res.data.filter((h) => isRealHolding(h))
+    return {
+      isin,
+      assetClass: assetClass.get(isin) ?? null,
+      asOf: res.data[0]?.as_of ?? null,
+      holdings: real.slice(0, TOP_HOLDINGS_PER_FUND).map((h) => ({
+        name: h.name, ticker: h.issuer_ticker, isin: h.security_isin, weight: Number(h.weight),
+      })),
+      truncated: res.data.length >= TOP_HOLDINGS_PER_FUND + 50 || real.length > TOP_HOLDINGS_PER_FUND,
     }
   })
 }

@@ -3,8 +3,9 @@
 import { redirect } from "next/navigation"
 
 import type { EtfDetail } from "@/lib/etf-types"
+import type { FundHoldings } from "@/lib/constituents"
 import type { FundExposure } from "@/lib/exposure"
-import { getEtfDetail, getExposures } from "@/lib/etfs"
+import { getEtfDetail, getExposures, getTopHoldings } from "@/lib/etfs"
 import {
   CURRENCIES, type Currency, isUuid, MAX_AMOUNT, MAX_ETFS, MAX_NAME_LENGTH,
 } from "@/lib/portfolio-rules"
@@ -102,6 +103,20 @@ export async function loadExposures(isins: string[]): Promise<FundExposure[] | n
   if (!claims?.claims) redirect("/login")
   try {
     return await getExposures(list)
+  } catch {
+    return null
+  }
+}
+
+/** Each selected ETF's largest holdings, for the combined top constituents. */
+export async function loadTopHoldings(isins: string[]): Promise<FundHoldings[] | null> {
+  const list = Array.isArray(isins) ? isins.filter((i) => ISIN_RE.test(i)).slice(0, MAX_ETFS) : []
+  if (list.length === 0) return null
+  const supabase = await createClient()
+  const { data: claims } = await supabase.auth.getClaims()
+  if (!claims?.claims) redirect("/login")
+  try {
+    return await getTopHoldings(list)
   } catch {
     return null
   }

@@ -13,6 +13,7 @@ import { loadPriceSeries } from "./actions"
 import { CorrelationMatrix } from "./correlation-matrix"
 import { ExposureCharts, type FundLabel } from "./exposure-charts"
 import { formatDay, type LineSpec, PerformanceChart } from "./performance-chart"
+import { TopConstituents } from "./top-constituents"
 import { SERIES_COLORS } from "./series-colors"
 
 /** Loaded series per currency + selection, kept for the browser session (same for every user). */
@@ -160,6 +161,9 @@ export function AnalysisStep({ isins, fractions, amount, colors, etfOptions, cur
       {/* Charts B and C: where the money is invested (latest holdings, not time-based). */}
       <ExposureCharts isins={isins} fractions={fractions} funds={fundLabels} />
 
+      {/* Chart D: largest holdings across the portfolio (latest holdings, not time-based). */}
+      <TopConstituents isins={isins} fractions={fractions} funds={fundLabels} />
+
       {/* Chart E: scoped by the same time range as the performance charts. */}
       {start && (
         <div className={cn("transition-opacity", refreshing && "opacity-50")}>
@@ -194,7 +198,6 @@ export function AnalysisStep({ isins, fractions, amount, colors, etfOptions, cur
         </div>
       )}
 
-      <p className="text-sm text-muted-foreground">More analysis is on the way: the top holdings across your whole portfolio.</p>
       <Button variant="outline" onClick={onBack}>Back to ETF selection</Button>
     </div>
   )
