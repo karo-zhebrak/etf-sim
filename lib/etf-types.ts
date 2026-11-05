@@ -47,3 +47,37 @@ export function matchesQuery(etf: EtfOption, query: string): boolean {
   const haystack = `${etf.name} ${etf.isin} ${etf.ticker ?? ""}`.toLowerCase()
   return words.every((w) => haystack.includes(w))
 }
+
+export type Distribution = "acc" | "none"
+export type Replication = "physical" | "physical_sampled" | "synthetic"
+
+export type EtfHolding = { name: string; isin: string | null; weight: number }
+
+/** Everything the ETF detail view shows (spec 3.3 B). */
+export type EtfDetail = {
+  isin: string
+  name: string
+  ticker: string | null
+  benchmark: string | null
+  description: string | null
+  distribution: Distribution | null
+  replication: Replication | null
+  currency: string | null
+  inceptionDate: string | null
+  ter: number | null
+  assetClass: AssetClass | null
+  factsheetUrl: string | null
+  topHoldings: EtfHolding[]
+  holdingsAsOf: string | null
+}
+
+export const DISTRIBUTION_LABELS: Record<Distribution, string> = {
+  acc: "Accumulating (income is reinvested)",
+  none: "No income (physical gold)",
+}
+
+export const REPLICATION_LABELS: Record<Replication, string> = {
+  physical: "Physical (full replication)",
+  physical_sampled: "Physical (sampled)",
+  synthetic: "Synthetic (swap-based)",
+}

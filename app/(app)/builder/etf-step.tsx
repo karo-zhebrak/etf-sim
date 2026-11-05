@@ -10,6 +10,8 @@ import { ASSET_CLASS_LABELS, type EtfOption, matchesQuery } from "@/lib/etf-type
 import { MAX_ETFS } from "@/lib/portfolio-rules"
 import { cn } from "@/lib/utils"
 
+import { EtfDetailSheet } from "./etf-detail"
+
 const terFmt = new Intl.NumberFormat("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 function EtfMeta({ etf }: { etf: EtfOption }) {
@@ -34,9 +36,12 @@ export function EtfStep({ options, selected, onAdd, onRemove, onBack, onContinue
 }) {
   const [query, setQuery] = useState("")
   const [announcement, setAnnouncement] = useState("")
+  const [detailIsin, setDetailIsin] = useState<string | null>(null)
   const byIsin = useMemo(() => new Map(options.map((o) => [o.isin, o])), [options])
   const results = useMemo(() => options.filter((o) => matchesQuery(o, query)), [options, query])
   const full = selected.length >= MAX_ETFS
+
+  const detailEtf = detailIsin ? byIsin.get(detailIsin) ?? null : null
 
   function add(etf: EtfOption) {
     if (full) return
@@ -55,7 +60,9 @@ export function EtfStep({ options, selected, onAdd, onRemove, onBack, onContinue
       <Card className="min-w-0">
         <CardHeader>
           <CardTitle>Choose your ETFs</CardTitle>
-          <CardDescription>Search by name, ISIN or ticker. You can select up to {MAX_ETFS}.</CardDescription>
+          <CardDescription>
+            Search by name, ISIN or ticker, and select a fund&apos;s name to see its details. You can select up to {MAX_ETFS}.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative">
@@ -83,7 +90,11 @@ export function EtfStep({ options, selected, onAdd, onRemove, onBack, onContinue
                 return (
                   <li key={etf.isin} className="flex items-center gap-3 p-3">
                     <div className="min-w-0 flex-1 space-y-1">
-                      <p className="text-sm font-medium">{etf.name}</p>
+                      <button type="button" onClick={() => setDetailIsin(etf.isin)}
+                              className="text-left text-sm font-medium underline-offset-4 hover:underline"
+                              aria-label={`${etf.name}: view details`}>
+                        {etf.name}
+                      </button>
                       <EtfMeta etf={etf} />
                     </div>
                     {isSelected ? (
@@ -128,7 +139,15 @@ export function EtfStep({ options, selected, onAdd, onRemove, onBack, onContinue
                 return (
                   <li key={isin} className="flex items-start gap-2 rounded-lg border p-2">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium leading-snug">{label}</p>
+                      {etf ? (
+                        <button type="button" onClick={() => setDetailIsin(isin)}
+                                className="text-left text-sm font-medium leading-snug underline-offset-4 hover:underline"
+                                aria-label={`${label}: view details`}>
+                          {label}
+                        </button>
+                      ) : (
+                        <p className="text-sm font-medium leading-snug">{label}</p>
+                      )}
                       <p className="font-mono text-xs text-muted-foreground">{isin}</p>
                     </div>
                     <Button variant="ghost" size="icon-sm" aria-label={`Remove ${label}`}
@@ -149,6 +168,15 @@ export function EtfStep({ options, selected, onAdd, onRemove, onBack, onContinue
           </div>
         </CardContent>
       </Card>
+
+      <EtfDetailSheet
+        etf={detailEtf}
+        onClose={() => setDetailIsin(null)}
+        selected={detailIsin !== null && selected.includes(detailIsin)}
+        selectedCount={selected.length}
+        onAdd={() => detailEtf && add(detailEtf)}
+        onRemove={() => detailEtf && remove(detailEtf)}
+      />
     </div>
   )
 }

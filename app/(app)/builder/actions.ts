@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation"
 
+import type { EtfDetail } from "@/lib/etf-types"
+import { getEtfDetail } from "@/lib/etfs"
 import {
   CURRENCIES, type Currency, isUuid, MAX_AMOUNT, MAX_ETFS, MAX_NAME_LENGTH,
 } from "@/lib/portfolio-rules"
@@ -61,4 +63,12 @@ export async function savePortfolio(input: SaveInput): Promise<SaveResult> {
     return { ok: false, error: "We couldn't save the portfolio. Please try again." }
   }
   return { ok: true, id: data.id, name: data.name, updatedAt: data.updated_at }
+}
+
+/** Details for the ETF detail view, loaded when the user opens it. */
+export async function loadEtfDetail(isin: string): Promise<EtfDetail | null> {
+  const supabase = await createClient()
+  const { data: claims } = await supabase.auth.getClaims()
+  if (!claims?.claims) redirect("/login")
+  return getEtfDetail(String(isin))
 }
