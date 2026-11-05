@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { allocationError, effectiveWeights, isCustomised } from "@/lib/allocation"
 import type { EtfOption } from "@/lib/etf-types"
 import { formatDateTime, formatMoney } from "@/lib/format"
 import {
@@ -78,6 +79,7 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
   const [saveOpen, setSaveOpen] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [justSaved, setJustSaved] = useState(false)
+  const [allocationNotice, setAllocationNotice] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
   const hydrated = useRef(false)
 
@@ -88,6 +90,8 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
     : parsed !== null && parsed > MAX_AMOUNT ? `The amount must be no more than ${formatMoney(MAX_AMOUNT, draft.currency)}.`
     : null
   const dirty = id === null || !sameDraft(draft, saved)
+  const allocError = allocationError(draft.etfs)
+  const analysisReady = draft.etfs.length > 0 && allocError === null
 
   // Restore unsaved changes from this browser tab (e.g. after a reload). Runs once after
   // hydration, because session storage doesn't exist during server rendering.
@@ -146,15 +150,41 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
     setRestored(false)
   }
 
-  function addEtf(isin: string) {
+  // Changing the selection after customising weights would leave a total other than 100%,
+  // so the allocation goes back to equal weights (with a notice).
+  function changeSelection(next: (etfs: DraftEtf[]) => DraftEtf[]) {
     setJustSaved(false)
-    setDraft((d) => (d.etfs.length >= MAX_ETFS || d.etfs.some((e) => e.isin === isin)
-      ? d : { ...d, etfs: [...d.etfs, { isin, weight: null }] }))
+    const customised = isCustomised(draft.etfs)
+    const etfs = next(draft.etfs)
+    if (etfs === draft.etfs) return
+    setDraft({ ...draft, etfs: customised ? etfs.map((e) => ({ ...e, weight: null })) : etfs })
+    setAllocationNotice(customised && etfs.length > 0
+      ? "Your selection changed, so the allocation was reset to equal weights." : null)
+  }
+
+  function addEtf(isin: string) {
+    changeSelection((etfs) => (etfs.length >= MAX_ETFS || etfs.some((e) => e.isin === isin)
+      ? etfs : [...etfs, { isin, weight: null }]))
   }
 
   function removeEtf(isin: string) {
+    changeSelection((etfs) => etfs.filter((e) => e.isin !== isin))
+  }
+
+  /** Set one fund's weight. The first edit fixes the others at their current (equal) values. */
+  function setWeight(isin: string, weight: number) {
     setJustSaved(false)
-    setDraft((d) => ({ ...d, etfs: d.etfs.filter((e) => e.isin !== isin) }))
+    setAllocationNotice(null)
+    setDraft((d) => {
+      const current = effectiveWeights(d.etfs)
+      return { ...d, etfs: d.etfs.map((e, i) => ({ ...e, weight: e.isin === isin ? weight : current[i] })) }
+    })
+  }
+
+  function splitEqually() {
+    setJustSaved(false)
+    setAllocationNotice(null)
+    setDraft((d) => ({ ...d, etfs: d.etfs.map((e) => ({ ...e, weight: null })) }))
   }
 
   function save(nameToSave: string) {
@@ -221,7 +251,7 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
         </div>
       )}
 
-      <Stepper step={step} onStep={setStep} analysisEnabled={draft.etfs.length > 0} />
+      <Stepper step={step} onStep={setStep} analysisEnabled={analysisReady} />
 
       {step === "amount" && (
         <AmountStep
@@ -238,13 +268,21 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
         <EtfStep
           options={etfOptions}
           selected={draft.etfs.map((e) => e.isin)}
+          weights={effectiveWeights(draft.etfs)}
+          customised={isCustomised(draft.etfs)}
+          amount={draft.amount}
+          currency={draft.currency}
+          allocationError={allocError}
+          allocationNotice={allocationNotice}
           onAdd={addEtf}
           onRemove={removeEtf}
+          onWeightChange={setWeight}
+          onSplitEqually={splitEqually}
           onBack={() => setStep("amount")}
           onContinue={() => setStep("analysis")}
         />
       )}
-      {step === "analysis" && (draft.etfs.length > 0 ? (
+      {step === "analysis" && (analysisReady ? (
         <ComingSoon
           title="Portfolio Analysis"
           text="Allocations and the analysis charts arrive in the next iterations."
@@ -252,7 +290,8 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
           onBack={() => setStep("etfs")}
         />
       ) : (
-        <ComingSoon title="Portfolio Analysis" text="Select at least one ETF to see the analysis."
+        <ComingSoon title="Portfolio Analysis"
+                    text={draft.etfs.length === 0 ? "Select at least one ETF to see the analysis." : "Make the allocations add up to 100% to see the analysis."}
                     backLabel="Back to ETF selection" onBack={() => setStep("etfs")} />
       ))}
 
@@ -276,7 +315,7 @@ function Stepper({ step, onStep, analysisEnabled }: { step: Step; onStep: (s: St
                 onClick={() => onStep(s.id)}
                 disabled={disabled}
                 aria-current={active ? "step" : undefined}
-                title={disabled ? "Select at least one ETF to see the analysis" : undefined}
+                title={disabled ? "Select at least one ETF, with allocations adding up to 100%" : undefined}
                 className={cn(
                   "flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
                   active ? "border-foreground bg-foreground text-background" : "hover:bg-muted",
