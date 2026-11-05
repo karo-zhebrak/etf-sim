@@ -6,6 +6,8 @@ import {
 } from "recharts"
 
 import { Button } from "@/components/ui/button"
+import { formatMoney } from "@/lib/format"
+import { cn } from "@/lib/utils"
 import { axisTicks, type ChartRow, chartRows, endLabelsFit, normalise, type PriceSeries, totalReturn } from "@/lib/performance"
 
 export type LineSpec = { key: string; label: string; color: string; dashed?: boolean }
@@ -25,17 +27,20 @@ export const formatDay = (iso: string) => dayFmt.format(toDate(iso))
 function annualised(total: number | null, startIso: string, endIso: string): number | null {
   if (total === null) return null
   const years = (toDate(endIso).getTime() - toDate(startIso).getTime()) / 86_400_000 / 365.25
-  return years >= 1 ? (1 + total) ** (1 / years) - 1 : null
+  // A calendar year is 365 or 366 days; treat anything from 365 days as a full year.
+  return years >= 365 / 365.25 ? (1 + total) ** (1 / years) - 1 : null
 }
 
 /** Line chart of each series indexed to 100 at `start` (spec 3.4 A and F). */
-export function PerformanceChart({ series, lines, start, title, description, footnote }: {
+export function PerformanceChart({ series, lines, start, title, description, footnote, money }: {
   series: PriceSeries[]
   lines: LineSpec[]
   start: string
   title: string
   description: string
   footnote: React.ReactNode
+  /** When set, also show what this amount would have grown to (tooltip and table). */
+  money?: { amount: number; currency: string }
 }) {
   const [showTable, setShowTable] = useState(false)
   const normalised = useMemo(() => normalise(series, start), [series, start])
@@ -100,7 +105,8 @@ export function PerformanceChart({ series, lines, start, title, description, foo
                 <th scope="col" className="py-2 pr-3 font-normal">Series</th>
                 <th scope="col" className="py-2 pr-3 text-right font-normal">Value (start = 100)</th>
                 <th scope="col" className="py-2 pr-3 text-right font-normal">Total return</th>
-                <th scope="col" className="py-2 text-right font-normal">A year, on average</th>
+                <th scope="col" className={cn("py-2 text-right font-normal", money && "pr-3")}>A year, on average</th>
+                {money && <th scope="col" className="py-2 text-right font-normal">Value of {formatMoney(money.amount, money.currency)}</th>}
               </tr>
             </thead>
             <tbody>
@@ -109,7 +115,12 @@ export function PerformanceChart({ series, lines, start, title, description, foo
                   <th scope="row" className="py-2 pr-3 text-left font-normal">{r.label}</th>
                   <td className="py-2 pr-3 text-right tabular-nums">{r.last === null ? "—" : idxFmt.format(r.last)}</td>
                   <td className="py-2 pr-3 text-right tabular-nums">{r.total === null ? "—" : pctFmt.format(r.total)}</td>
-                  <td className="py-2 text-right tabular-nums">{r.annual === null ? "—" : pctFmt.format(r.annual)}</td>
+                  <td className={cn("py-2 text-right tabular-nums", money && "pr-3")}>{r.annual === null ? "—" : pctFmt.format(r.annual)}</td>
+                  {money && (
+                    <td className="py-2 text-right tabular-nums">
+                      {r.last === null ? "—" : formatMoney(Math.round((money.amount * r.last) / 100), money.currency)}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -132,7 +143,7 @@ export function PerformanceChart({ series, lines, start, title, description, foo
                 cursor={{ stroke: INK.muted, strokeWidth: 1 }}
                 isAnimationActive={false}
                 content={(props) => (
-                  <ChartTooltip active={props.active} payload={props.payload} label={props.label} lines={lines} />
+                  <ChartTooltip active={props.active} payload={props.payload} label={props.label} lines={lines} money={money} />
                 )}
               />
               {lines.map((l) => (
@@ -172,11 +183,12 @@ function EndLabel(props: { x?: number | string; y?: number | string; index?: num
   )
 }
 
-function ChartTooltip({ active, payload, label, lines }: {
+function ChartTooltip({ active, payload, label, lines, money }: {
   active?: boolean
   payload?: readonly { payload?: unknown }[]
   label?: unknown
   lines: LineSpec[]
+  money?: { amount: number; currency: string }
 }) {
   if (!active || !payload?.length) return null
   const row = payload[0].payload as ChartRow
@@ -191,7 +203,11 @@ function ChartTooltip({ active, payload, label, lines }: {
               <span className="inline-block h-0.5 w-3 shrink-0 rounded" style={{ background: l.color }} aria-hidden />
               <span className="min-w-0 flex-1 truncate text-muted-foreground">{l.label}</span>
               <span className="tabular-nums">
-                {typeof v === "number" ? `${idxFmt.format(v)} (${pctFmt.format(v / 100 - 1)})` : "—"}
+                {typeof v === "number"
+                  ? money
+                    ? `${formatMoney(Math.round((money.amount * v) / 100), money.currency)} (${pctFmt.format(v / 100 - 1)})`
+                    : `${idxFmt.format(v)} (${pctFmt.format(v / 100 - 1)})`
+                  : "—"}
               </span>
             </li>
           )

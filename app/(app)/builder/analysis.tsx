@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import type { EtfOption } from "@/lib/etf-types"
-import { commonStart, type PriceSeries, type RangeId, rangeOptions } from "@/lib/performance"
+import { buyAndHold, commonStart, normalise, type PriceSeries, type RangeId, rangeOptions } from "@/lib/performance"
 import type { Currency } from "@/lib/portfolio-rules"
+import { formatMoney } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 import { loadPriceSeries } from "./actions"
@@ -15,10 +16,15 @@ import { SERIES_COLORS } from "./series-colors"
 /** Loaded series per currency + selection, kept for the browser session (same for every user). */
 const seriesCache = new Map<string, PriceSeries[]>()
 
+/** "Your portfolio" has its own validated categorical slot (violet), never a fund's colour. */
+const PORTFOLIO = { key: "PORTFOLIO", label: "Your portfolio", color: "#6250d6" }
 const BENCHMARK = { key: "MSCI_WORLD", label: "MSCI World Index (benchmark)", color: "#52514e" }
 
-export function AnalysisStep({ isins, colors, etfOptions, currency, onBack }: {
+export function AnalysisStep({ isins, fractions, amount, colors, etfOptions, currency, onBack }: {
   isins: string[]
+  /** Allocation as exact fractions (equal = 1/n), aligned with isins. */
+  fractions: number[]
+  amount: number | null
   /** Fund colours, owned by the builder so they survive switching steps. */
   colors: Map<string, string>
   etfOptions: EtfOption[]
@@ -88,6 +94,7 @@ export function AnalysisStep({ isins, colors, etfOptions, currency, onBack }: {
     }),
     ...(benchmark ? [{ ...BENCHMARK, dashed: true }] : []),
   ]
+  const portfolio = start ? buyAndHold(PORTFOLIO.key, normalise(fundSeries, start), fractions) : null
   const firstDates = shown.map((s) => ({ key: s.key, first: s.dates[0] }))
   const limiting = firstDates.filter((f) => f.first === commonStart(shown)).map((f) => (f.key === BENCHMARK.key ? "MSCI World" : names.get(f.key)?.name ?? f.key))
 
@@ -144,7 +151,34 @@ export function AnalysisStep({ isins, colors, etfOptions, currency, onBack }: {
         </div>
       )}
 
-      <p className="text-sm text-muted-foreground">More analysis is on the way: combined portfolio performance, geography, sectors, top holdings and correlation.</p>
+      {start && portfolio && portfolio.values.length > 0 && (
+        <div className={cn("transition-opacity", refreshing && "opacity-50")}>
+          <PerformanceChart
+            title="Combined portfolio performance"
+            description={amount === null
+              ? "Your whole portfolio at its allocation, against the MSCI World Index, starting from 100."
+              : `What ${formatMoney(amount, currency)} invested at your allocation would have grown to, against the MSCI World Index.`}
+            series={benchmark ? [portfolio, benchmark] : [portfolio]}
+            lines={[PORTFOLIO, ...(benchmark ? [{ ...BENCHMARK, dashed: true }] : [])]}
+            start={start}
+            money={amount === null ? undefined : { amount, currency }}
+            footnote={
+              <>
+                <p>
+                  Buy and hold: invested at your allocation on {formatDay(start)} and never rebalanced, so each
+                  fund&apos;s share drifts with its price. After each fund&apos;s ongoing charge (TER), with income
+                  reinvested. No platform fees, dealing costs or taxes are included. MSCI World is an index, so it
+                  has no fees.
+                </p>
+                {amount === null && <p>Enter an investment amount in step 1 to see values in {currency}.</p>}
+                <p className="font-medium text-foreground">Past performance does not predict future returns.</p>
+              </>
+            }
+          />
+        </div>
+      )}
+
+      <p className="text-sm text-muted-foreground">More analysis is on the way: geography, sectors, top holdings and correlation.</p>
       <Button variant="outline" onClick={onBack}>Back to ETF selection</Button>
     </div>
   )

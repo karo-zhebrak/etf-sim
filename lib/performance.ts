@@ -83,7 +83,7 @@ const weekKey = (iso: string) => Math.floor((Date.parse(iso) / DAY_MS + 3) / 7) 
 /**
  * Merge series into rows for a line chart. Uses the union of price dates; when the period
  * is longer than `weeklyAfterDays`, keeps only the last date of each week (plus the first
- * and last) to keep the chart light. A series carries its last price forward over dates it
+ * date and each series' last date) to keep the chart light. A series carries its last price forward over dates it
  * has none (different holiday calendars), but never past its own last price.
  */
 export function chartRows(series: PriceSeries[], weeklyAfterDays = 800): ChartRow[] {
@@ -92,7 +92,9 @@ export function chartRows(series: PriceSeries[], weeklyAfterDays = 800): ChartRo
   const spanDays = (Date.parse(all[all.length - 1]) - Date.parse(all[0])) / DAY_MS
   let dates = all
   if (spanDays > weeklyAfterDays) {
-    dates = all.filter((d, i) => i === 0 || i === all.length - 1 || weekKey(d) !== weekKey(all[i + 1]))
+    // Keep each series' own last date too, so every line ends on its latest price.
+    const lastDates = new Set(series.filter((s) => s.dates.length).map((s) => s.dates[s.dates.length - 1]))
+    dates = all.filter((d, i) => i === 0 || i === all.length - 1 || lastDates.has(d) || weekKey(d) !== weekKey(all[i + 1]))
   }
   const cursors = series.map(() => -1)
   return dates.map((date) => {
@@ -128,4 +130,32 @@ export function endLabelsFit(endValues: number[], allValues: number[], minGapSha
   if (range <= 0) return endValues.length === 1
   const sorted = [...endValues].sort((a, b) => a - b)
   return sorted.every((v, i) => i === 0 || (v - sorted[i - 1]) / range >= minGapShare)
+}
+
+/**
+ * Buy-and-hold portfolio (agreed v1 rule): invest at the target weights on the start date,
+ * then let each holding's share drift with its price; no rebalancing. With every fund
+ * already indexed to 100 at the start (see `normalise`), the portfolio index is the
+ * weighted sum of the funds' indices.
+ *
+ * Uses the union of the funds' price dates, carries a fund's last price over dates it has
+ * none (and treats it as 100 before its first price, i.e. on the start date itself), and
+ * ends on the last date every fund has a price.
+ *
+ * @param funds   series indexed to 100 at the common start
+ * @param weights fractions aligned with `funds`, summing to 1
+ */
+export function buyAndHold(key: string, funds: PriceSeries[], weights: number[]): PriceSeries {
+  if (funds.length === 0 || funds.some((f) => f.dates.length === 0)) return { key, dates: [], values: [] }
+  const end = funds.map((f) => f.dates[f.dates.length - 1]).reduce((a, b) => (a < b ? a : b))
+  const dates = [...new Set(funds.flatMap((f) => f.dates))].filter((d) => d <= end).sort()
+  const cursors = funds.map(() => -1)
+  const values = dates.map((date) =>
+    funds.reduce((sum, f, k) => {
+      while (cursors[k] + 1 < f.dates.length && f.dates[cursors[k] + 1] <= date) cursors[k]++
+      const v = cursors[k] >= 0 ? f.values[cursors[k]] : 100
+      return sum + weights[k] * v
+    }, 0),
+  )
+  return { key, dates, values }
 }

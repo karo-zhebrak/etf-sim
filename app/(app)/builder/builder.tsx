@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { allocationError, effectiveWeights, isCustomised } from "@/lib/allocation"
+import { allocationError, effectiveWeights, exactFractions, isCustomised } from "@/lib/allocation"
 import type { EtfOption } from "@/lib/etf-types"
 import { formatDateTime, formatMoney } from "@/lib/format"
 import {
@@ -288,6 +288,8 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
       {step === "analysis" && (analysisReady ? (
         <AnalysisStep
           isins={draft.etfs.map((e) => e.isin)}
+          fractions={exactFractions(draft.etfs)}
+          amount={draft.amount}
           colors={fundColors}
           etfOptions={etfOptions}
           currency={draft.currency}

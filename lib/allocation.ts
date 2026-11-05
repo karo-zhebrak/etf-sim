@@ -41,3 +41,10 @@ export function parseWeight(raw: string): number | null {
   const v = Number(s)
   return v > 100 ? Number.NaN : v
 }
+
+/** Weights as exact fractions for calculations: equal shares are exactly 1/n (not the
+ * rounded display values). */
+export function exactFractions(etfs: WeightedEtf[]): number[] {
+  if (!isCustomised(etfs)) return etfs.map(() => 1 / etfs.length)
+  return etfs.map((e) => (e.weight ?? 0) / 100)
+}

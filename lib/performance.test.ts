@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  axisTicks, chartRows, commonStart, endLabelsFit, latestDate, normalise, type PriceSeries, rangeOptions, totalReturn,
+  axisTicks, buyAndHold, chartRows, commonStart, endLabelsFit, latestDate, normalise, type PriceSeries, rangeOptions,
+  totalReturn,
   yearsBefore,
 } from "./performance"
 
@@ -87,6 +88,20 @@ describe("chartRows", () => {
     expect(rows.length).toBeLessThan(170)
     expect(rows.length).toBeGreaterThan(150)
   })
+
+  it("keeps each series' own last date when thinning", () => {
+    const long: [string, number][] = []
+    for (let t = Date.UTC(2020, 0, 6); t <= Date.UTC(2023, 0, 3); t += 86_400_000) {
+      const d = new Date(t)
+      if (d.getUTCDay() !== 0 && d.getUTCDay() !== 6) long.push([d.toISOString().slice(0, 10), 100])
+    }
+    // B ends on Monday 2 Jan 2023; A ends on Tuesday 3 Jan 2023 (same week).
+    const a = s("A", long)
+    const b = s("B", long.filter(([d]) => d <= "2023-01-02").map(([d]) => [d, d === "2023-01-02" ? 90 : 100]))
+    const rows = chartRows([a, b])
+    const monday = rows.find((r) => r.date === "2023-01-02")
+    expect(monday?.B).toBe(90)
+  })
 })
 
 describe("axis ticks and end labels", () => {
@@ -99,5 +114,31 @@ describe("axis ticks and end labels", () => {
   it("drops end labels when line ends are too close", () => {
     expect(endLabelsFit([226, 174, 166], [60, 300])).toBe(false) // 166 and 174 are 3% of the range apart
     expect(endLabelsFit([226, 174, 120], [60, 300])).toBe(true)
+  })
+})
+
+describe("buyAndHold", () => {
+  it("weights each fund's growth and lets weights drift", () => {
+    const a = s("A", [["2026-01-05", 100], ["2026-01-06", 200]])
+    const b = s("B", [["2026-01-05", 100], ["2026-01-06", 100]])
+    const p = buyAndHold("P", [a, b], [0.5, 0.5])
+    expect(p.values).toEqual([100, 150])
+    // After A doubles, A is 2/3 of the portfolio: a further 10% rise in A adds 6.67%.
+    const a2 = s("A", [["2026-01-05", 100], ["2026-01-06", 200], ["2026-01-07", 220]])
+    const b2 = s("B", [["2026-01-05", 100], ["2026-01-06", 100], ["2026-01-07", 100]])
+    const p2 = buyAndHold("P", [a2, b2], [0.5, 0.5])
+    expect(p2.values[2] / p2.values[1] - 1).toBeCloseTo(1 / 15)
+  })
+
+  it("carries prices over holidays, treats a late first price as the start, and ends with the shortest series", () => {
+    const a = s("A", [["2026-01-05", 100], ["2026-01-06", 110], ["2026-01-07", 120], ["2026-01-08", 130]])
+    const b = s("B", [["2026-01-06", 100], ["2026-01-07", 90]]) // first price a day later; ends earlier
+    const p = buyAndHold("P", [a, b], [0.25, 0.75])
+    expect(p.dates).toEqual(["2026-01-05", "2026-01-06", "2026-01-07"])
+    expect(p.values).toEqual([100, 0.25 * 110 + 0.75 * 100, 0.25 * 120 + 0.75 * 90])
+  })
+
+  it("returns an empty series when a fund has no data", () => {
+    expect(buyAndHold("P", [s("A", [])], [1]).values).toEqual([])
   })
 })
