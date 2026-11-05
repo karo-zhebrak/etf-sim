@@ -95,7 +95,7 @@ ETF Portfolio Construction App, spec version 1.0. Users sign in, choose an inves
 | Monthly data pipeline (`pipeline/`) | In place: Python, runs locally and via GitHub Actions on the 10th of each month |
 | Vercel (hosting) | Planned: not linked or configured |
 
-The app has sign-in pages and a placeholder home page; no simulator features yet. The only tests are the pipeline's pytest suite; the app has no tests or test runner yet.
+The app has sign-in pages (with a password visibility toggle), the signed-in shell with main navigation, a home page and an Account page. Portfolio Builder and My Portfolios are placeholders until their iterations ship. The only tests are the pipeline's pytest suite; the app has no tests or test runner yet.
 
 ## Data sources
 
@@ -131,6 +131,9 @@ The schema lives in `supabase/migrations/`. Change it only through new migration
 - **Every page needs sign-in** except `/login`, `/signup`, `/forgot-password` and `/auth/*`. `proxy.ts` refreshes the session cookie and redirects signed-out visitors to `/login?next=…`. Add any new public route to `PUBLIC_PATHS` there.
 - **The proxy is only a convenience gate.** Check the session again in every Server Action and Route Handler (`supabase.auth.getClaims()`), and RLS protects the data. Use `getCurrentUser()` from `lib/auth.ts` in Server Components.
 - **Supabase clients:** use `createClient()` from `lib/supabase/server.ts` on the server. It reads cookies, so with Cache Components any component that uses it (or `getCurrentUser()`) must render inside `<Suspense>`. Keep session reads out of layouts' top level.
+- **Call `getCurrentUser()` before other Supabase reads in a Server Component.** It calls `connection()`, which keeps Supabase out of prerendering. Otherwise Supabase's `Date.now()` token-expiry check errors in the App Shell that partial prefetching renders with cookies.
+- **Layout:** signed-in pages live in the `app/(app)/` route group, whose layout has the main navigation (`components/app-nav.tsx`). Auth pages live in `app/(auth)/`.
+- **Hidden previous pages:** Cache Components keeps recently visited pages mounted but hidden (React Activity). In browser tests, query visible elements only, e.g. `h1 >> visible=true`.
 - **Redirects:** pass any user-supplied redirect target through `safeNextPath()` (`lib/auth.ts`).
 - **Env:** the app uses `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` only (see `.env.example`).
 - **Email links:** auth emails link to `/auth/callback`, which exchanges the code for a session and redirects to `next`. In Supabase Auth settings, the site URL and the `/**` redirect URLs must cover every environment.

@@ -1,8 +1,9 @@
 "use client"
 
+import { Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,11 +37,25 @@ function EmailField({ defaultValue }: { defaultValue?: string }) {
 function PasswordField({ name = "password", label = "Password", autoComplete, hint }: {
   name?: string; label?: string; autoComplete: string; hint?: string
 }) {
+  const [visible, setVisible] = useState(false)
   return (
     <div className="space-y-2">
       <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} type="password" autoComplete={autoComplete} required
-             minLength={autoComplete === "new-password" ? 8 : undefined} aria-describedby={hint ? `${name}-hint` : undefined} />
+      <div className="relative">
+        <Input id={name} name={name} type={visible ? "text" : "password"} autoComplete={autoComplete} required
+               className="pr-10" minLength={autoComplete === "new-password" ? 8 : undefined}
+               aria-describedby={hint ? `${name}-hint` : undefined} />
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          aria-label={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+          aria-pressed={visible}
+          aria-controls={name}
+          className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {visible ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
+        </button>
+      </div>
       {hint && <p id={`${name}-hint`} className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   )
