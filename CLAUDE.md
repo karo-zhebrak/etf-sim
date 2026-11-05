@@ -95,7 +95,7 @@ ETF Portfolio Construction App, spec version 1.0. Users sign in, choose an inves
 | Monthly data pipeline (`pipeline/`) | In place: Python, runs locally and via GitHub Actions on the 10th of each month |
 | Vercel (hosting) | Planned: not linked or configured |
 
-The app has sign-in pages (with a password visibility toggle), the signed-in shell with main navigation, a home page and an Account page. Portfolio Builder and My Portfolios are placeholders until their iterations ship. The only tests are the pipeline's pytest suite; the app has no tests or test runner yet.
+The app has sign-in pages (with a password visibility toggle), the signed-in shell with main navigation, a home page and an Account page. My Portfolios lists, creates, renames and deletes saved portfolios. The Portfolio Builder steps are placeholders until their iterations ship. The only tests are the pipeline's pytest suite; the app has no tests or test runner yet.
 
 ## Data sources
 
@@ -125,6 +125,8 @@ The schema lives in `supabase/migrations/`. Change it only through new migration
   - Series: `nav_prices`, `total_return_index`, `fx_rates`.
   - Reference: `label_mappings`.
   - Bookkeeping: `data_flags`, `source_files`, `pipeline_runs`.
+  - User data: `portfolios` (name, amount, currency, `updated_at` = last modified) and `portfolio_etfs` (ISIN, position 1–5, weight %).
+- **Portfolios are private to their owner.** RLS lets each user read and write only their own portfolios and portfolio ETFs. A portfolio is capped at 5 ETFs by `unique (portfolio_id, position)` with `position` between 1 and 5, so renumber positions when an ETF is removed. Drafts may have no amount and no ETFs. Triggers keep `updated_at` current when a portfolio or its ETFs change. Deleting a user deletes their portfolios. Shared rules live in `lib/portfolio-rules.ts`; server reads in `lib/portfolios.ts`.
 
 ## Authentication
 

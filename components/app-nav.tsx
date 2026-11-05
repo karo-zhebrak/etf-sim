@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { Suspense } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -11,13 +12,11 @@ const LINKS = [
   { href: "/account", label: "Account" },
 ]
 
-/** Main navigation links, highlighting the current section. */
-export function AppNav({ className }: { className?: string }) {
-  const pathname = usePathname()
+function NavLinks({ pathname, className }: { pathname: string | null; className?: string }) {
   return (
     <nav aria-label="Main" className={cn("flex items-center gap-1", className)}>
       {LINKS.map(({ href, label }) => {
-        const active = pathname === href || pathname.startsWith(`${href}/`)
+        const active = pathname !== null && (pathname === href || pathname.startsWith(`${href}/`))
         return (
           <Link
             key={href}
@@ -33,5 +32,19 @@ export function AppNav({ className }: { className?: string }) {
         )
       })}
     </nav>
+  )
+}
+
+function ActiveNavLinks({ className }: { className?: string }) {
+  return <NavLinks pathname={usePathname()} className={className} />
+}
+
+/** Main navigation, highlighting the current section. The pathname is URL data, so on
+ * dynamic routes it resolves at request time; until then the links render unhighlighted. */
+export function AppNav({ className }: { className?: string }) {
+  return (
+    <Suspense fallback={<NavLinks pathname={null} className={className} />}>
+      <ActiveNavLinks className={className} />
+    </Suspense>
   )
 }
