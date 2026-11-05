@@ -95,7 +95,9 @@ ETF Portfolio Construction App, spec version 1.0. Users sign in, choose an inves
 | Monthly data pipeline (`pipeline/`) | In place: Python, runs locally and via GitHub Actions on the 10th of each month |
 | Vercel (hosting) | Planned: not linked or configured |
 
-The app has sign-in pages (with a password visibility toggle), the signed-in shell with main navigation, a home page and an Account page. My Portfolios lists, creates, renames and deletes saved portfolios. The Portfolio Builder steps are placeholders until their iterations ship. The only tests are the pipeline's pytest suite; the app has no tests or test runner yet.
+The app has sign-in pages (with a password visibility toggle), the signed-in shell with main navigation, a home page and an Account page. My Portfolios lists, creates, renames and deletes saved portfolios. The Portfolio Builder (`/builder` for a new portfolio, `/builder/[id]` for a saved one) has the three-step stepper, the investment amount and currency step, and Save. ETF selection and analysis are placeholders until their iterations ship.
+
+**Builder state:** the builder edits a draft in the browser (`app/(app)/builder/builder.tsx`), so switching steps never loses input. Unsaved changes are kept in `sessionStorage` (restored with a notice after a reload), and closing the tab with unsaved changes asks first. "Save Portfolio" calls `savePortfolio` (`app/(app)/builder/actions.ts`). The first save asks for a name and moves the URL to `/builder/[id]` with `history.replaceState`, without remounting. The only tests are the pipeline's pytest suite; the app has no tests or test runner yet.
 
 ## Data sources
 
