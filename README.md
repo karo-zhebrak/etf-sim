@@ -28,28 +28,6 @@ Live at **[etfportfoliosimulator.com](https://etfportfoliosimulator.com)** (free
 
 Every chart has hover values, a table view and its data sources. Performance is shown after each fund's ongoing charge (TER), with income reinvested.
 
-## The funds
-
-13 accumulating UCITS ETFs available to UK investors, covering global, regional and single-country equities, property, short-dated bonds and gold:
-
-| Ticker | Fund | Asset class | Prices from |
-| --- | --- | --- | --- |
-| SWDA | iShares Core MSCI World | Equity | 2009 |
-| SSAC | iShares MSCI All Country World | Equity | 2011 |
-| CSPX | iShares Core S&P 500 | Equity | 2010 |
-| CNDX | iShares NASDAQ 100 | Equity | 2010 |
-| CUKX | iShares Core FTSE 100 | Equity | 2010 |
-| SMEA | iShares Core MSCI Europe | Equity | 2009 |
-| IJPA | iShares Core MSCI Japan IMI | Equity | 2009 |
-| EMIM | iShares Core MSCI EM IMI | Equity | 2014 |
-| DPYA | iShares Developed Markets Property Yield | Property | 2018 |
-| SGLN | iShares Physical Gold ETC | Gold | 2011 |
-| HSWO | HSBC Developed World Screened Equity | Equity | 2022 |
-| HNSC | HSBC Nasdaq Global Semiconductor | Equity | 2023 |
-| HAGG | HSBC Bloomberg Global ESG Aggregate 1–3 Year Bond | Bonds | 2022 |
-
-Only accumulating share classes are included, so each fund's price already reflects reinvested income. The list lives in [`pipeline/config/etf_universe.yaml`](pipeline/config/etf_universe.yaml).
-
 ## How it works
 
 ```
