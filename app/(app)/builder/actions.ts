@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation"
 
 import type { EtfDetail } from "@/lib/etf-types"
-import { getEtfDetail } from "@/lib/etfs"
+import type { FundExposure } from "@/lib/exposure"
+import { getEtfDetail, getExposures } from "@/lib/etfs"
 import {
   CURRENCIES, type Currency, isUuid, MAX_AMOUNT, MAX_ETFS, MAX_NAME_LENGTH,
 } from "@/lib/portfolio-rules"
@@ -90,4 +91,18 @@ export async function loadPriceSeries(isins: string[], currency: Currency): Prom
     dates: r.dates,
     values: r.vals.map(Number),
   }))
+}
+
+/** Sector and country breakdowns of the selected ETFs, for the exposure charts. */
+export async function loadExposures(isins: string[]): Promise<FundExposure[] | null> {
+  const list = Array.isArray(isins) ? isins.filter((i) => ISIN_RE.test(i)).slice(0, MAX_ETFS) : []
+  if (list.length === 0) return null
+  const supabase = await createClient()
+  const { data: claims } = await supabase.auth.getClaims()
+  if (!claims?.claims) redirect("/login")
+  try {
+    return await getExposures(list)
+  } catch {
+    return null
+  }
 }

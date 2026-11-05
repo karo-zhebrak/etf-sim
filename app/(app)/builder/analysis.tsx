@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 import { loadPriceSeries } from "./actions"
+import { ExposureCharts, type FundLabel } from "./exposure-charts"
 import { formatDay, type LineSpec, PerformanceChart } from "./performance-chart"
 import { SERIES_COLORS } from "./series-colors"
 
@@ -95,6 +96,10 @@ export function AnalysisStep({ isins, fractions, amount, colors, etfOptions, cur
     ...(benchmark ? [{ ...BENCHMARK, dashed: true }] : []),
   ]
   const portfolio = start ? buyAndHold(PORTFOLIO.key, normalise(fundSeries, start), fractions) : null
+  const fundLabels = new Map<string, FundLabel>(isins.map((i) => {
+    const etf = names.get(i)
+    return [i, { name: etf?.name ?? i, short: etf?.ticker ?? etf?.name ?? i, color: colors.get(i) ?? SERIES_COLORS[0] }]
+  }))
   const firstDates = shown.map((s) => ({ key: s.key, first: s.dates[0] }))
   const limiting = firstDates.filter((f) => f.first === commonStart(shown)).map((f) => (f.key === BENCHMARK.key ? "MSCI World" : names.get(f.key)?.name ?? f.key))
 
@@ -151,6 +156,9 @@ export function AnalysisStep({ isins, fractions, amount, colors, etfOptions, cur
         </div>
       )}
 
+      {/* Charts B and C: where the money is invested (latest holdings, not time-based). */}
+      <ExposureCharts isins={isins} fractions={fractions} funds={fundLabels} />
+
       {start && portfolio && portfolio.values.length > 0 && (
         <div className={cn("transition-opacity", refreshing && "opacity-50")}>
           <PerformanceChart
@@ -178,7 +186,7 @@ export function AnalysisStep({ isins, fractions, amount, colors, etfOptions, cur
         </div>
       )}
 
-      <p className="text-sm text-muted-foreground">More analysis is on the way: geography, sectors, top holdings and correlation.</p>
+      <p className="text-sm text-muted-foreground">More analysis is on the way: top holdings across your portfolio, and correlation between your ETFs.</p>
       <Button variant="outline" onClick={onBack}>Back to ETF selection</Button>
     </div>
   )

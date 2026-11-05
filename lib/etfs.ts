@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth"
 import {
   type AssetClass, displayName, type Distribution, type EtfDetail, type EtfOption, type Replication,
 } from "@/lib/etf-types"
+import type { FundExposure } from "@/lib/exposure"
 import { isRealHolding } from "@/lib/holdings-rules"
 import { createClient } from "@/lib/supabase/server"
 
@@ -68,4 +69,34 @@ export async function getEtfDetail(isin: string): Promise<EtfDetail | null> {
     topHoldings: real.map((h) => ({ name: h.name, isin: h.security_isin, weight: Number(h.weight) })),
     holdingsAsOf: holdings.data[0]?.as_of ?? null,
   }
+}
+
+/** Latest sector and country breakdowns for the given ETFs (portfolio exposure analysis).
+ * Expects the caller to have authorized the request. */
+export async function getExposures(isins: string[]): Promise<FundExposure[]> {
+  const list = isins.filter((i) => ISIN_RE.test(i))
+  if (list.length === 0) return []
+  const supabase = await createClient()
+  const [etfs, rows] = await Promise.all([
+    supabase.from("etfs").select("isin, asset_class").in("isin", list),
+    supabase.from("latest_exposures").select("isin, kind, label, label_normalised, iso_code, weight, as_of")
+      .in("isin", list).in("kind", ["sector", "country"]),
+  ])
+  if (etfs.error || rows.error) throw new Error(`Could not load exposures: ${(etfs.error ?? rows.error)!.message}`)
+  const assetClass = new Map(etfs.data.map((e) => [e.isin, e.asset_class as AssetClass | null]))
+  return list.map((isin) => {
+    const mine = rows.data.filter((r) => r.isin === isin)
+    const pick = (kind: string) => mine.filter((r) => r.kind === kind)
+    const toRows = (kind: string) => pick(kind).map((r) => ({
+      label: r.label_normalised ?? r.label, iso: r.iso_code, weight: Number(r.weight),
+    }))
+    return {
+      isin,
+      assetClass: assetClass.get(isin) ?? null,
+      sectors: toRows("sector"),
+      countries: toRows("country"),
+      sectorsAsOf: pick("sector")[0]?.as_of ?? null,
+      countriesAsOf: pick("country")[0]?.as_of ?? null,
+    }
+  })
 }
