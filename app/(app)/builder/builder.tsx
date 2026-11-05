@@ -10,13 +10,15 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import type { EtfOption } from "@/lib/etf-types"
 import { formatDateTime, formatMoney } from "@/lib/format"
 import {
-  CURRENCIES, CURRENCY_LABELS, type Currency, MAX_AMOUNT, MAX_NAME_LENGTH, parseAmount,
+  CURRENCIES, CURRENCY_LABELS, type Currency, MAX_AMOUNT, MAX_ETFS, MAX_NAME_LENGTH, parseAmount,
 } from "@/lib/portfolio-rules"
 import { cn } from "@/lib/utils"
 
 import { savePortfolio } from "./actions"
+import { EtfStep } from "./etf-step"
 
 export type BuilderInitial = {
   id: string | null
@@ -24,9 +26,11 @@ export type BuilderInitial = {
   amount: number | null
   currency: Currency
   updatedAt: string | null
+  etfs: DraftEtf[]
 }
 
-type Draft = { amount: number | null; currency: Currency }
+type DraftEtf = { isin: string; weight: number | null }
+type Draft = { amount: number | null; currency: Currency; etfs: DraftEtf[] }
 type Step = "amount" | "etfs" | "analysis"
 
 const STEPS: { id: Step; label: string }[] = [
@@ -37,7 +41,10 @@ const STEPS: { id: Step; label: string }[] = [
 
 const CURRENCY_SYMBOL: Record<Currency, string> = { GBP: "£", EUR: "€", USD: "$" }
 const storageKey = (id: string | null) => `etfsim:builder-draft:${id ?? "new"}`
-const sameDraft = (a: Draft, b: Draft) => a.amount === b.amount && a.currency === b.currency
+const sameDraft = (a: Draft, b: Draft) =>
+  a.amount === b.amount && a.currency === b.currency && a.etfs.length === b.etfs.length &&
+  a.etfs.every((e, i) => e.isin === b.etfs[i].isin && e.weight === b.etfs[i].weight)
+const isEmptyDraft = (d: Draft) => d.amount === null && d.currency === "GBP" && d.etfs.length === 0
 
 function formatAmountInput(amount: number | null): string {
   if (amount === null) return ""
@@ -48,18 +55,22 @@ function formatAmountInput(amount: number | null): string {
 function readStored(id: string | null): { draft: Draft; step: Step } | null {
   try {
     const raw = window.sessionStorage.getItem(storageKey(id))
-    return raw ? JSON.parse(raw) : null
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    // Drafts stored before ETF selection existed have no etfs list.
+    return { step: parsed.step ?? "amount", draft: { etfs: [], ...parsed.draft } }
   } catch {
     return null
   }
 }
 
 /** Step-based portfolio builder. Edits a draft in the browser; "Save Portfolio" writes it. */
-export function Builder({ initial }: { initial: BuilderInitial }) {
+export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfOptions: EtfOption[] }) {
   const [id, setId] = useState(initial.id)
   const [name, setName] = useState(initial.name)
   const [savedAt, setSavedAt] = useState(initial.updatedAt)
-  const [saved, setSaved] = useState<Draft>({ amount: initial.amount, currency: initial.currency })
+  const [initialDraft] = useState<Draft>(() => ({ amount: initial.amount, currency: initial.currency, etfs: initial.etfs }))
+  const [saved, setSaved] = useState<Draft>(initialDraft)
   const [draft, setDraft] = useState<Draft>(saved)
   const [amountText, setAmountText] = useState(formatAmountInput(initial.amount))
   const [step, setStep] = useState<Step>("amount")
@@ -83,20 +94,20 @@ export function Builder({ initial }: { initial: BuilderInitial }) {
   useEffect(() => {
     const stored = readStored(initial.id)
     hydrated.current = true
-    if (stored && !sameDraft(stored.draft, { amount: initial.amount, currency: initial.currency })) {
+    if (stored && !sameDraft(stored.draft, initialDraft)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore after hydration
       setDraft(stored.draft)
       setAmountText(formatAmountInput(stored.draft.amount))
       setStep(stored.step)
       setRestored(true)
     }
-  }, [initial.id, initial.amount, initial.currency])
+  }, [initial.id, initialDraft])
 
   // Keep the draft in session storage while it has unsaved changes.
   useEffect(() => {
     if (!hydrated.current) return
     try {
-      if (dirty && !(id === null && draft.amount === null && draft.currency === "GBP")) {
+      if (dirty && !(id === null && isEmptyDraft(draft))) {
         window.sessionStorage.setItem(storageKey(id), JSON.stringify({ draft, step }))
       } else {
         window.sessionStorage.removeItem(storageKey(id))
@@ -108,7 +119,7 @@ export function Builder({ initial }: { initial: BuilderInitial }) {
 
   // Warn before closing or reloading the tab with unsaved changes.
   useEffect(() => {
-    const hasChanges = id === null ? draft.amount !== null : !sameDraft(draft, saved)
+    const hasChanges = id === null ? !isEmptyDraft(draft) : !sameDraft(draft, saved)
     if (!hasChanges) return
     const onBeforeUnload = (e: BeforeUnloadEvent) => e.preventDefault()
     window.addEventListener("beforeunload", onBeforeUnload)
@@ -130,10 +141,20 @@ export function Builder({ initial }: { initial: BuilderInitial }) {
   }
 
   function discardRestored() {
-    const original = { amount: initial.amount, currency: initial.currency }
-    setDraft(original)
-    setAmountText(formatAmountInput(original.amount))
+    setDraft(initialDraft)
+    setAmountText(formatAmountInput(initialDraft.amount))
     setRestored(false)
+  }
+
+  function addEtf(isin: string) {
+    setJustSaved(false)
+    setDraft((d) => (d.etfs.length >= MAX_ETFS || d.etfs.some((e) => e.isin === isin)
+      ? d : { ...d, etfs: [...d.etfs, { isin, weight: null }] }))
+  }
+
+  function removeEtf(isin: string) {
+    setJustSaved(false)
+    setDraft((d) => ({ ...d, etfs: d.etfs.filter((e) => e.isin !== isin) }))
   }
 
   function save(nameToSave: string) {
@@ -144,7 +165,9 @@ export function Builder({ initial }: { initial: BuilderInitial }) {
     }
     setSaveError(null)
     startTransition(async () => {
-      const result = await savePortfolio({ id, name: nameToSave, amount: draft.amount, currency: draft.currency })
+      const result = await savePortfolio({
+        id, name: nameToSave, amount: draft.amount, currency: draft.currency, etfs: draft.etfs,
+      })
       if (!result.ok) {
         setSaveError(result.error)
         return
@@ -198,7 +221,7 @@ export function Builder({ initial }: { initial: BuilderInitial }) {
         </div>
       )}
 
-      <Stepper step={step} onStep={setStep} analysisEnabled={false} />
+      <Stepper step={step} onStep={setStep} analysisEnabled={draft.etfs.length > 0} />
 
       {step === "amount" && (
         <AmountStep
@@ -212,8 +235,26 @@ export function Builder({ initial }: { initial: BuilderInitial }) {
         />
       )}
       {step === "etfs" && (
-        <ComingSoon title="ETF Selection" text="Searching and selecting up to five ETFs arrives in the next iteration." onBack={() => setStep("amount")} />
+        <EtfStep
+          options={etfOptions}
+          selected={draft.etfs.map((e) => e.isin)}
+          onAdd={addEtf}
+          onRemove={removeEtf}
+          onBack={() => setStep("amount")}
+          onContinue={() => setStep("analysis")}
+        />
       )}
+      {step === "analysis" && (draft.etfs.length > 0 ? (
+        <ComingSoon
+          title="Portfolio Analysis"
+          text="Allocations and the analysis charts arrive in the next iterations."
+          backLabel="Back to ETF selection"
+          onBack={() => setStep("etfs")}
+        />
+      ) : (
+        <ComingSoon title="Portfolio Analysis" text="Select at least one ETF to see the analysis."
+                    backLabel="Back to ETF selection" onBack={() => setStep("etfs")} />
+      ))}
 
       <SaveDialog open={saveOpen} onOpenChange={setSaveOpen} pending={pending} error={saveError} onSave={save} />
     </div>
@@ -340,7 +381,7 @@ function AmountStep(props: {
   )
 }
 
-function ComingSoon({ title, text, onBack }: { title: string; text: string; onBack: () => void }) {
+function ComingSoon({ title, text, backLabel, onBack }: { title: string; text: string; backLabel: string; onBack: () => void }) {
   return (
     <Card>
       <CardHeader>
@@ -348,7 +389,7 @@ function ComingSoon({ title, text, onBack }: { title: string; text: string; onBa
         <CardDescription>{text}</CardDescription>
       </CardHeader>
       <CardContent>
-        <Button variant="outline" onClick={onBack}>Back to investment amount</Button>
+        <Button variant="outline" onClick={onBack}>{backLabel}</Button>
       </CardContent>
     </Card>
   )

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 
 import { Card } from "@/components/ui/card"
+import { listEtfs } from "@/lib/etfs"
 import { getPortfolio } from "@/lib/portfolios"
 
 import { Builder } from "../builder"
@@ -21,17 +22,19 @@ export default function SavedPortfolioPage({ params }: PageProps<"/builder/[id]"
 
 async function SavedBuilder({ params }: { params: PageProps<"/builder/[id]">["params"] }) {
   const { id } = await params
-  const portfolio = await getPortfolio(id)
+  const [portfolio, etfOptions] = await Promise.all([getPortfolio(id), listEtfs()])
   if (!portfolio) notFound()
   return (
     <Builder
       key={portfolio.id}
+      etfOptions={etfOptions}
       initial={{
         id: portfolio.id,
         name: portfolio.name,
         amount: portfolio.amount,
         currency: portfolio.currency,
         updatedAt: portfolio.updatedAt,
+        etfs: portfolio.etfs,
       }}
     />
   )
