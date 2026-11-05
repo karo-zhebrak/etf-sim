@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 import { loadPriceSeries } from "./actions"
+import { CorrelationMatrix } from "./correlation-matrix"
 import { ExposureCharts, type FundLabel } from "./exposure-charts"
 import { formatDay, type LineSpec, PerformanceChart } from "./performance-chart"
 import { SERIES_COLORS } from "./series-colors"
@@ -159,6 +160,13 @@ export function AnalysisStep({ isins, fractions, amount, colors, etfOptions, cur
       {/* Charts B and C: where the money is invested (latest holdings, not time-based). */}
       <ExposureCharts isins={isins} fractions={fractions} funds={fundLabels} />
 
+      {/* Chart E: scoped by the same time range as the performance charts. */}
+      {start && (
+        <div className={cn("transition-opacity", refreshing && "opacity-50")}>
+          <CorrelationMatrix series={fundSeries} start={start} funds={fundLabels} currency={currency} />
+        </div>
+      )}
+
       {start && portfolio && portfolio.values.length > 0 && (
         <div className={cn("transition-opacity", refreshing && "opacity-50")}>
           <PerformanceChart
@@ -186,7 +194,7 @@ export function AnalysisStep({ isins, fractions, amount, colors, etfOptions, cur
         </div>
       )}
 
-      <p className="text-sm text-muted-foreground">More analysis is on the way: top holdings across your portfolio, and correlation between your ETFs.</p>
+      <p className="text-sm text-muted-foreground">More analysis is on the way: the top holdings across your whole portfolio.</p>
       <Button variant="outline" onClick={onBack}>Back to ETF selection</Button>
     </div>
   )
