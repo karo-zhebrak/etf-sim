@@ -19,6 +19,8 @@ import {
 import { cn } from "@/lib/utils"
 
 import { savePortfolio } from "./actions"
+import { AnalysisStep } from "./analysis"
+import { useStableColors } from "./series-colors"
 import { EtfStep } from "./etf-step"
 
 export type BuilderInitial = {
@@ -92,6 +94,7 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
   const dirty = id === null || !sameDraft(draft, saved)
   const allocError = allocationError(draft.etfs)
   const analysisReady = draft.etfs.length > 0 && allocError === null
+  const fundColors = useStableColors(draft.etfs.map((e) => e.isin))
 
   // Restore unsaved changes from this browser tab (e.g. after a reload). Runs once after
   // hydration, because session storage doesn't exist during server rendering.
@@ -283,10 +286,11 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
         />
       )}
       {step === "analysis" && (analysisReady ? (
-        <ComingSoon
-          title="Portfolio Analysis"
-          text="Allocations and the analysis charts arrive in the next iterations."
-          backLabel="Back to ETF selection"
+        <AnalysisStep
+          isins={draft.etfs.map((e) => e.isin)}
+          colors={fundColors}
+          etfOptions={etfOptions}
+          currency={draft.currency}
           onBack={() => setStep("etfs")}
         />
       ) : (

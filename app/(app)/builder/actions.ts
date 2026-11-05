@@ -72,3 +72,22 @@ export async function loadEtfDetail(isin: string): Promise<EtfDetail | null> {
   if (!claims?.claims) redirect("/login")
   return getEtfDetail(String(isin))
 }
+
+export type SeriesPayload = { key: string; dates: string[]; values: number[] }
+
+/** Price series for the analysis, converted into the portfolio currency: one per ISIN plus
+ * MSCI_WORLD. NAVs are total return and already net of each fund's TER. */
+export async function loadPriceSeries(isins: string[], currency: Currency): Promise<SeriesPayload[] | null> {
+  const list = Array.isArray(isins) ? isins.filter((i) => ISIN_RE.test(i)) : []
+  if (list.length === 0 || list.length > MAX_ETFS || !CURRENCIES.includes(currency)) return null
+  const supabase = await createClient()
+  const { data: claims } = await supabase.auth.getClaims()
+  if (!claims?.claims) redirect("/login")
+  const { data, error } = await supabase.rpc("price_series", { p_isins: list, p_currency: currency })
+  if (error || !data) return null
+  return (data as { series: string; dates: string[]; vals: (number | string)[] }[]).map((r) => ({
+    key: r.series,
+    dates: r.dates,
+    values: r.vals.map(Number),
+  }))
+}
