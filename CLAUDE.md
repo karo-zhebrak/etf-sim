@@ -13,6 +13,77 @@ Keep these in mind when building features:
 - **Educational, not advisory.** Present simulations as illustrations. Do not recommend specific investments or tell users what they should buy, and do not imply that simulated or past performance predicts future returns.
 - **UK-first.** Default to GBP and UK terminology, formats and investor context.
 
+## v1 feature spec
+
+ETF Portfolio Construction App, spec version 1.0. Users sign in, choose an investment amount, select up to five ETFs, set allocations, analyse the combined portfolio, and save portfolios to revisit later. It should feel like a professional, modern financial analytics dashboard while staying accessible to beginners.
+
+### Structure and navigation
+
+- **Main navigation:** Portfolio Builder, My Portfolios, Account / Settings, Logout.
+- **Portfolio Builder** is a step-based workflow:
+  1. Investment Amount
+  2. ETF Selection, including allocations
+  3. Portfolio Analysis
+
+  Users can move back and forth between steps without losing inputs or selections.
+- **Main journey:** log in → start a portfolio (amount and currency) → search, explore and select up to 5 ETFs and set allocations → analyse → save → reopen, edit, re-analyse or delete from My Portfolios.
+
+### Features (all MVP)
+
+1. **Authentication** (high)
+   - Sign up, log in, log out, forgot password; email and password fields.
+   - **Password visibility toggle** (not built yet).
+   - Saved portfolios are available after logging in.
+2. **Investment amount** (high)
+   - A positive amount, with a currency choice of **GBP (default), EUR or USD**.
+   - The amount and currency are shown throughout the builder, can be edited until the portfolio is saved, and are kept when moving between steps.
+3. **ETF selection** (high)
+   - A searchable list showing name and ISIN, with add and remove, a counter (e.g. 3/5), a selected-ETFs panel, and "proceed to analysis".
+   - **Maximum 5 ETFs.** Adding a sixth is blocked.
+   - The selection is kept when moving between steps.
+4. **ETF detail view** (high), opened by clicking an ETF:
+   - name, ISIN, benchmark, description, distribution policy, replication method, currency, inception date, TER
+   - top 10 constituents
+5. **Portfolio allocation** (high)
+   - Defaults to equal weights. Users can customise each weight, and the total must equal 100%.
+   - Show each ETF's percentage and its monetary amount (e.g. £10,000 across 4 ETFs = 25% / £2,500 each).
+   - Analysis updates when allocations change.
+6. **Portfolio analysis** (high), available once at least one ETF is selected. Interactive charts with hover values; it updates when the selection or allocations change.
+   - **A. Historical performance comparison:** a line chart with one line per selected ETF plus MSCI World, normalised to 100 at a common start, with a legend, hover values and 1Y / 3Y / 5Y / MAX range buttons.
+   - **B. Geographic exposure:** the combined portfolio by country or region, with percentages, as an interactive chart.
+   - **C. Sector exposure:** the combined portfolio by sector, with percentages, as an interactive chart.
+   - **D. Top 10 portfolio constituents:** name and combined exposure (%), with overlapping holdings across ETFs combined; an optional weight visualisation.
+   - **E. Correlation matrix:** up to 5×5, with ETF names on both axes, coefficients from -1 to +1, 1.0 on the diagonal, and colour coding for positive, negative and low correlation.
+   - **F. Combined portfolio performance:** the portfolio vs MSCI World, both normalised to 100, with range buttons and hover values. It reflects the allocations and fees (see decisions below).
+7. **Save portfolio** (high)
+   - A "Save Portfolio" button and a name. Saves the name, amount, currency, selected ETFs, allocations and last-modified date.
+   - Incomplete portfolios can be saved, before or after analysis. Existing portfolios can be updated. Show a confirmation on save.
+8. **My Portfolios** (high)
+   - Lists each portfolio's name, number of ETFs, amount, currency and last-modified date, with open and delete.
+   - Opening a portfolio resumes editing and re-running the analysis.
+
+**Deferred:** Similar ETFs (spec priority medium). With the current universe no two funds share a benchmark, so it was dropped for now. Do not build it.
+
+**Future enhancements (not v1):** risk metrics (volatility, max drawdown, Sharpe), more benchmarks, optimisation suggestions, automatic overlap identification, ETF comparison mode, PDF/Excel export, sharing, what-if scenarios.
+
+**Out of scope:** brokerage integration, executing trades, payments. Data sourcing is handled by the pipeline.
+
+**Design principles:** simplicity, clarity, visualisation first, consistency, interactivity (hover, filters), and responsive layouts for desktop, tablet and mobile.
+
+### Implementation decisions (agreed 2026-11-05)
+
+- **Benchmark (MSCI World):** use the MSCI World Index (Net) series we already hold. That is `total_return_index` for SWDA (`IE00B4L5Y983`), `series = 'benchmark'`. It is in USD, so convert it to the chosen currency. Exclude flagged points: the series is clean from 2 April 2012. It ends a few days before the latest NAVs.
+- **Fees:** NAVs are already net of each fund's TER. Calculate performance from NAVs, label it "after fund fees", and **never subtract the TER again**.
+- **Combined portfolio:** buy and hold. Invest at the target weights on the start date, then let the weights drift with prices. There is no rebalancing.
+- **Currency:** convert NAVs and the benchmark with ECB rates (`fx_rates`, EUR-based) into GBP, EUR or USD. Credit the ECB.
+- **Common start:** normalised charts start at 100 on the latest first-price date among the selected series. Disable range buttons longer than the available history (the HSBC funds start in December 2022 or May 2023, so 5Y is unavailable when one is selected).
+- **Correlation:** use weekly returns over the common period. Daily NAVs across time zones understate correlation.
+- **Geography:** CSPX, CNDX, CUKX and IJPA have no country breakdown. Treat each as 100% its home country (US, US, UK, Japan) and say so in the UI. Gold (SGLN) is its own "Gold" slice. Use `label_normalised` and ISO codes.
+- **Sectors:** show an asset-class split first (equity, bonds, property, gold), then equity sectors by `label_normalised`. Bond sectors (Government, Corporate, …) are not GICS sectors.
+- **Constituents:** combined exposure = Σ (ETF weight × holding weight). Match holdings by ISIN where available, by ticker within iShares, otherwise by normalised name. Name matching is imperfect, so label the result approximate. Exclude cash, FX and derivative lines. SGLN shows "Physical gold" rather than a top-10 list.
+- **As-of dates:** exposures and holdings differ by issuer (HSBC factsheets lag a month), so show the as-of date.
+- **Disclaimer:** show "past performance does not predict future returns" with every performance chart.
+
 ## Current status
 
 | Layer | Status |
