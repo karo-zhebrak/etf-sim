@@ -22,7 +22,6 @@ export default function Home() {
         </p>
         <div className="flex flex-wrap gap-2">
           <Link href="/builder" className={buttonVariants()}>Start a portfolio</Link>
-          <Link href="/portfolios" className={buttonVariants({ variant: "outline" })}>My Portfolios</Link>
         </div>
       </div>
       <Suspense fallback={<Card className="h-32" />}>
