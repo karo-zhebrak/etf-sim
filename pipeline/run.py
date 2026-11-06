@@ -157,6 +157,8 @@ def process_etf(etf: EtfConfig, ctx: Context) -> EtfResult:
         res.errors.append(f"fetch: {e}")
         log.debug(traceback.format_exc())
         return res
+    if ctx.loader is not None:
+        ctx.loader.ensure_connected()  # downloads can take minutes; the server may have dropped us
 
     records: list[tuple[FetchedFile, str | None, str, str | None]] = []  # for source_files
     combined = ParsedFile(isin=etf.isin, facts=EtfFacts(isin=etf.isin))
@@ -312,8 +314,9 @@ def run(issuer: str | None = None, isin: str | None = None, skip_download: bool 
     if not dry_run:
         from pipeline.load import Loader, connect
         from pipeline.storage import Storage
-        conn = connect(_env("SUPABASE_DB_URL"))
-        ctx.loader = Loader(conn)
+        db_url = _env("SUPABASE_DB_URL")
+        conn = connect(db_url)
+        ctx.loader = Loader(conn, db_url)
         ctx.storage = Storage(_env("SUPABASE_URL"), _env("SUPABASE_SERVICE_ROLE_KEY"))
         ctx.mappings = ctx.loader.mappings()
         ctx.run_id = ctx.loader.start_run(_git_sha())
@@ -329,6 +332,8 @@ def run(issuer: str | None = None, isin: str | None = None, skip_download: bool 
             results.append(process_etf(etf, ctx))
         if isin is None and issuer is None:
             log.info("ECB FX rates")
+            if ctx.loader is not None:
+                ctx.loader.ensure_connected()
             fx = process_fx(ctx)
         if ctx.storage is not None and not skip_download:
             try:
@@ -350,10 +355,11 @@ def run(issuer: str | None = None, isin: str | None = None, skip_download: bool 
     }
     if ctx.loader is not None:
         status = "failed" if len(failed) == len(results) + (fx[2] == "FAILED") else ("partial" if failed else "success")
+        ctx.loader.ensure_connected()
         ctx.loader.finish_run(ctx.run_id, status, summary)
         print(f"\nRun {ctx.run_id} saved to pipeline_runs ({status})")
         ctx.storage.close()
-        conn.close()
+        ctx.loader.conn.close()
     else:
         out = RAW_DIR / ctx.month / "dry_run_summary.json"
         out.parent.mkdir(parents=True, exist_ok=True)

@@ -26,6 +26,20 @@ export const HOME_COUNTRY: Record<string, { iso: string; label: string }> = {
   IE00B53SZB19: { iso: "US", label: "United States" }, // CNDX, Nasdaq 100
   IE00B53HP851: { iso: "GB", label: "United Kingdom" }, // CUKX, FTSE 100
   IE00B4L5YX21: { iso: "JP", label: "Japan" }, // IJPA, MSCI Japan IMI
+  IE00B539F030: { iso: "GB", label: "United Kingdom" }, // CSUK, MSCI UK
+  IE00B3VWLG82: { iso: "GB", label: "United Kingdom" }, // CUKS, MSCI UK Small Cap
+  IE00B3WJKG14: { iso: "US", label: "United States" }, // IUIT, S&P 500 Information Technology
+  IE00B43HR379: { iso: "US", label: "United States" }, // IUHC, S&P 500 Health Care
+  IE00BFM6TC58: { iso: "US", label: "United States" }, // DTLA, US Treasury Bond 20+yr
+  IE00BZCQB185: { iso: "IN", label: "India" }, // NDIA, MSCI India
+  IE00B5W4TY14: { iso: "KR", label: "South Korea" }, // CSKR, MSCI Korea
+  IE00BKY40J65: { iso: "US", label: "United States" }, // HSBC USA Screened Equity
+  IE000JZ473P7: { iso: "US", label: "United States" }, // HSBC S&P 500 (Acc)
+  IE00BKY53D40: { iso: "GB", label: "United Kingdom" }, // HSBC UK Screened Equity
+  IE00BKY55S33: { iso: "JP", label: "Japan" }, // HSBC Japan Screened Equity
+  IE0006RFB3X2: { iso: "JP", label: "Japan" }, // HSBC MSCI Japan (Acc)
+  IE0007P4PBU1: { iso: "CN", label: "China" }, // HSBC MSCI China (Acc)
+  IE00BMWXKN31: { iso: "CN", label: "China" }, // HSBC Hang Seng Tech (Chinese companies listed in Hong Kong)
 }
 
 export const ASSET_CLASS_GROUP: Record<AssetClass, string> = {

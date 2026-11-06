@@ -1,7 +1,8 @@
 """Label normalisation using the label_mappings taxonomy.
 
-The seed rows live in the initial migration (single source of truth). Without a database
-connection (--dry-run), they are read straight from that SQL file; with one, the table is used.
+The rows live in the migrations (single source of truth): the initial seed plus later
+migrations that add mappings. Without a database connection (--dry-run), they are read
+straight from those SQL files, in migration order; with one, the table is used.
 """
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ from pathlib import Path
 
 from pipeline.models import Exposure
 
-MIGRATION = Path(__file__).resolve().parent.parent / "supabase" / "migrations" / "20261103234500_initial_schema.sql"
+MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "supabase" / "migrations"
 
 # key: (kind, issuer, lower-case label) -> (normalised label, iso code)
 Mappings = dict[tuple[str, str, str], tuple[str, str | None]]
@@ -19,8 +20,11 @@ Mappings = dict[tuple[str, str, str], tuple[str, str | None]]
 _ROW = re.compile(r"\(\s*'([^']*)',\s*'([^']*)',\s*'((?:[^']|'')*)',\s*'([^']*)'(?:,\s*(null|'[^']*'))?\s*\)")
 
 
-def load_seed_mappings(path: Path = MIGRATION) -> Mappings:
-    sql = re.sub(r"--[^\n]*", "", path.read_text())  # drop comments (labels contain no "--")
+def load_seed_mappings(paths: list[Path] | None = None) -> Mappings:
+    if paths is None:
+        paths = sorted(MIGRATIONS_DIR.glob("*.sql"))
+    # Drop comments (labels contain no "--"). Later migrations only add new labels.
+    sql = "\n".join(re.sub(r"--[^\n]*", "", p.read_text()) for p in paths)
     out: Mappings = {}
     for block in re.findall(r"insert into public\.label_mappings.*?;", sql, re.S | re.I):
         for kind, issuer, label, norm, iso in _ROW.findall(block):

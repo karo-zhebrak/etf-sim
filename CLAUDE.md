@@ -76,9 +76,9 @@ ETF Portfolio Construction App, spec version 1.0. Users sign in, choose an inves
 - **Fees:** NAVs are already net of each fund's TER. Calculate performance from NAVs, label it "after fund fees", and **never subtract the TER again**.
 - **Combined portfolio:** buy and hold. Invest at the target weights on the start date, then let the weights drift with prices. There is no rebalancing.
 - **Currency:** convert NAVs and the benchmark with ECB rates (`fx_rates`, EUR-based) into GBP, EUR or USD. Credit the ECB.
-- **Common start:** normalised charts start at 100 on the latest first-price date among the selected series. Disable range buttons longer than the available history (the HSBC funds start in December 2022 or May 2023, so 5Y is unavailable when one is selected).
+- **Common start:** normalised charts start at 100 on the latest first-price date among the selected series. Disable range buttons longer than the available history (HSBC price files only go back to late 2022 at most, and some Acc share classes are younger, e.g. HSBC MSCI World Acc from August 2024, so 5Y is unavailable when one is selected).
 - **Correlation:** use weekly returns over the common period. Daily NAVs across time zones understate correlation.
-- **Geography:** CSPX, CNDX, CUKX and IJPA have no country breakdown. Treat each as 100% its home country (US, US, UK, Japan) and say so in the UI. Gold (SGLN) is its own "Gold" slice. Use `label_normalised` and ISO codes.
+- **Geography:** single-country funds that publish no country breakdown (CSPX, CNDX, CUKX, IJPA, and others added later) count as 100% their home country, and the UI says so. The list is `HOME_COUNTRY` in `lib/exposure.ts`: add new single-country funds there. Global funds without a breakdown (e.g. LOCK) show as "No country data". Gold (SGLN) is its own "Gold" slice. Use `label_normalised` and ISO codes.
 - **Sectors:** show an asset-class split first (equity, bonds, property, gold), then equity sectors by `label_normalised`. Bond sectors (Government, Corporate, …) are not GICS sectors.
 - **Constituents:** combined exposure = Σ (ETF weight × holding weight). Match holdings by ISIN where available, by ticker within iShares, otherwise by normalised name. Name matching is imperfect, so label the result approximate. Exclude cash, FX and derivative lines. SGLN shows "Physical gold" rather than a top-10 list.
 - **As-of dates:** exposures and holdings differ by issuer (HSBC factsheets lag a month), so show the as-of date.
@@ -119,7 +119,7 @@ All market data comes from the monthly pipeline. See `pipeline/README.md` for ho
   - iShares: fund data file (SpreadsheetML XML) and factsheet PDF.
   - HSBC: price history (`.xlsx`), factsheet PDF and full holdings (`.xls`).
 - **FX:** ECB euro reference rates, with full history. Reuse is allowed with attribution, so credit the European Central Bank wherever FX-converted figures appear.
-- **Universe:** `pipeline/config/etf_universe.yaml`, currently 13 ETFs (10 iShares, 3 HSBC). Only accumulating share classes are in scope, plus a no-income gold ETC. Distributing classes fail validation.
+- **Universe:** `pipeline/config/etf_universe.yaml`, currently 45 ETFs (27 iShares, 18 HSBC; expanded from 13 on 2026-11-06). Only accumulating share classes are in scope, plus a no-income gold ETC. Distributing classes fail validation.
 - **Raw issuer files are never committed** (`pipeline/raw/` and `pipeline/samples/` are gitignored). They are kept gzipped in the private Supabase Storage bucket `raw-issuer-files`, and only the last 3 months are kept. Test fixtures must be synthetic.
 
 ## Data model
@@ -130,7 +130,7 @@ The schema lives in `supabase/migrations/`. Change it only through new migration
 - **NAV is total return.** Every fund is accumulating, so `nav_prices` already includes reinvested income, and there is no distributions table. `total_return_index` holds only the iShares growth-of-10,000 series (fund and benchmark); HSBC publishes none.
 - **Native currencies.** Series are stored in the share class currency (mostly USD; some GBP and EUR). Convert in queries: `nav_gbp` gives NAVs in GBP, and `fx_gbp` gives the GBP value of each currency per ECB date. Do not store converted values.
 - **Flagged data.** Points with `quality = 'flagged'` are suspect issuer data, such as the SWDA benchmark rebasing glitch. Exclude them from charts and calculations; `nav_gbp` already does. Details are in `data_flags`.
-- **Labels.** Use `exposures.label_normalised` (GICS-style sectors, ISO countries) to compare funds across issuers, not the raw `label`.
+- **Labels.** Mappings are seeded in the initial migration; add new ones in a new migration (dry runs read every migration's `label_mappings` inserts). Use `exposures.label_normalised` (GICS-style sectors, ISO countries) to compare funds across issuers, not the raw `label`.
 - **Partial data.** `holdings.is_partial = true` means only a top-10 list was available. HSBC full holdings have no sector.
 - **Access (RLS).** Market data tables and views are readable by both `anon` and `authenticated` (decided 2026-11-06: the app works without an account; signing in is only needed to save portfolios). Nothing is writable from the app except a user's own portfolios. Only the service role writes market data, and that is the pipeline. `pipeline_runs`, `source_files` and `data_flags` are not readable from the app. Never use the service role key in the Next.js app.
 - **Tables:**

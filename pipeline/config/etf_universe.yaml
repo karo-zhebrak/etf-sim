@@ -94,6 +94,159 @@ etfs:
     product_url: https://www.ishares.com/uk/individual/en/products/258441
 
 
+  - issuer: ishares
+    ticker: CS51
+    isin: IE00B53L3W79
+    name: "Core EURO STOXX 50 (Acc)"
+    issuer_fund_name: "iShares Core EURO STOXX 50 UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/253712
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: CPXJ
+    isin: IE00B52MJY50
+    name: "Core MSCI Pacific ex-Japan (Acc)"
+    issuer_fund_name: "iShares Core MSCI Pacific ex-Japan UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/253735
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: WSML
+    isin: IE00BF4RFH31
+    name: "MSCI World Small Cap (Acc)"
+    issuer_fund_name: "iShares MSCI World Small Cap UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/296576
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: IWQU
+    isin: IE00BP3QZ601
+    name: "Edge MSCI World Quality Factor (Acc)"
+    issuer_fund_name: "iShares Edge MSCI World Quality Factor UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/270054
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: IWVL
+    isin: IE00BP3QZB59
+    name: "Edge MSCI World Value Factor (Acc)"
+    issuer_fund_name: "iShares Edge MSCI World Value Factor UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/270048
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: IWMO
+    isin: IE00BP3QZ825
+    name: "Edge MSCI World Momentum Factor (Acc)"
+    issuer_fund_name: "iShares Edge MSCI World Momentum Factor UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/270051
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: MVOL
+    isin: IE00B8FHGS14
+    name: "Edge MSCI World Minimum Volatility (Acc)"
+    issuer_fund_name: "iShares Edge MSCI World Minimum Volatility UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/251382
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: IUIT
+    isin: IE00B3WJKG14
+    name: "S&P 500 Information Technology Sector (Acc)"
+    issuer_fund_name: "iShares S&P 500 Information Technology Sector UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/280510
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: IUHC
+    isin: IE00B43HR379
+    name: "S&P 500 Health Care Sector (Acc)"
+    issuer_fund_name: "iShares S&P 500 Health Care Sector UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/280507
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: CSUK
+    isin: IE00B539F030
+    name: "MSCI UK (Acc)"
+    issuer_fund_name: "iShares MSCI UK UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/253739
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: CUKS
+    isin: IE00B3VWLG82
+    name: "MSCI UK Small Cap (Acc)"
+    issuer_fund_name: "iShares MSCI UK Small Cap UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/253474
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: NDIA
+    isin: IE00BZCQB185
+    name: "MSCI India (Acc)"
+    issuer_fund_name: "iShares MSCI India UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/297617
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: CSKR
+    isin: IE00B5W4TY14
+    name: "MSCI Korea (Acc)"
+    issuer_fund_name: "iShares MSCI Korea UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/253733
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: HEAL
+    isin: IE00BYZK4776
+    name: "Healthcare Innovation (Acc)"
+    issuer_fund_name: "iShares Healthcare Innovation UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/284216
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: RBOT
+    isin: IE00BYZK4552
+    name: "Automation & Robotics (Acc)"
+    issuer_fund_name: "iShares Automation & Robotics UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/284219
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: LOCK
+    isin: IE00BG0J4C88
+    name: "Digital Security (Acc)"
+    issuer_fund_name: "iShares Digital Security UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/297843
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
+  - issuer: ishares
+    ticker: DTLA
+    isin: IE00BFM6TC58
+    name: "$ Treasury Bond 20+yr (Acc)"
+    issuer_fund_name: "iShares $ Treasury Bond 20+yr UCITS ETF"
+    product_url: https://www.ishares.com/uk/individual/en/products/297191
+    notes: "Added 2026-11-06 (universe expansion)."
+
+
   - issuer: hsbc
     ticker: HSWO
     isin: IE00BKY59K37
@@ -118,3 +271,124 @@ etfs:
     issuer_fund_name: "HSBC BLOOMBERG GLOBAL ESG AGGREGATE 1-3 YEAR BOND UCITS ETF"
     product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie000xgnmwe1
     notes: "Issuer now names this fund 'Bloomberg Global ESG Aggregate 1-3 Year Bond' (config said 'Sustainable')."
+
+
+  - issuer: hsbc
+    ticker: HSUS
+    isin: IE00BKY40J65
+    name: "USA Screened Equity (Acc)"
+    issuer_fund_name: "HSBC USA SCREENED EQUITY UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie00bky40j65
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: HSXJ
+    isin: IE00BKY58G26
+    name: "Asia Pacific ex Japan Screened Equity (Acc)"
+    issuer_fund_name: "HSBC ASIA PACIFIC EX JAPAN SCREENED EQUITY UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie00bky58g26
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: HSJP
+    isin: IE00BKY55S33
+    name: "Japan Screened Equity (Acc)"
+    issuer_fund_name: "HSBC JAPAN SCREENED EQUITY UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie00bky55s33
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: HSUK
+    isin: IE00BKY53D40
+    name: "UK Screened Equity (Acc)"
+    issuer_fund_name: "HSBC UK SCREENED EQUITY UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie00bky53d40
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: HSEM
+    isin: IE00BKY59G90
+    name: "Emerging Market Screened Equity (Acc)"
+    issuer_fund_name: "HSBC EMERGING MARKET SCREENED EQUITY UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie00bky59g90
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: HSTE
+    isin: IE00BMWXKN31
+    name: "Hang Seng Tech"
+    issuer_fund_name: "HSBC HANG SENG TECH UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie00bmwxkn31
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: HMWA
+    isin: IE000UQND7H4
+    name: "MSCI World (Acc)"
+    issuer_fund_name: "HSBC MSCI WORLD UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie000uqnd7h4
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: HSPA
+    isin: IE000JZ473P7
+    name: "S&P 500 (Acc)"
+    issuer_fund_name: "HSBC S&P 500 UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie000jz473p7
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: HMEA
+    isin: IE000ZQOIPB1
+    name: "MSCI Europe (Acc)"
+    issuer_fund_name: "HSBC MSCI EUROPE UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie000zqoipb1
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: H50A
+    isin: IE000MWUQBJ0
+    name: "EURO STOXX 50 (Acc)"
+    issuer_fund_name: "HSBC EURO STOXX 50 UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie000mwuqbj0
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: HMJA
+    isin: IE0006RFB3X2
+    name: "MSCI Japan (Acc)"
+    issuer_fund_name: "HSBC MSCI JAPAN UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie0006rfb3x2
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: HMPA
+    isin: IE000SGVQIZ9
+    name: "MSCI Pacific ex Japan (Acc)"
+    issuer_fund_name: "HSBC MSCI PACIFIC ex JAPAN UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie000sgvqiz9
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: HMEF
+    isin: IE000KCS7J59
+    name: "MSCI Emerging Markets (Acc)"
+    issuer_fund_name: "HSBC MSCI EMERGING MARKETS UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie000kcs7j59
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: HMCA
+    isin: IE0007P4PBU1
+    name: "MSCI China (Acc)"
+    issuer_fund_name: "HSBC MSCI CHINA UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie0007p4pbu1
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."
+
+  - issuer: hsbc
+    ticker: HWFA
+    isin: IE0000378O66
+    name: "Multi Factor Worldwide Equity (Acc)"
+    issuer_fund_name: "HSBC MULTI FACTOR WORLDWIDE EQUITY UCITS ETF"
+    product_url: https://www.assetmanagement.hsbc.co.uk/en/individual-investor/funds/ie0000378o66
+    notes: "Added 2026-11-06 (universe expansion). Ticker is a label only; the pipeline takes tickers from the issuer files."

@@ -30,7 +30,7 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120  # ~45 funds at >=3 s per request; HSBC needs ~8 requests per fund
     defaults:
       run:
         shell: bash

@@ -11,6 +11,7 @@ Running the same month twice therefore leaves the data unchanged.
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Iterable, Sequence
 
 import psycopg
@@ -27,8 +28,13 @@ ETF_FACT_COLS = ["primary_ticker", "name", "share_class_currency", "base_currenc
                  "description", "factsheet_url", "isa_eligible", "uk_reporting"]
 
 
+log = logging.getLogger(__name__)
+
+
 def connect(db_url: str) -> psycopg.Connection:
-    return psycopg.connect(db_url, connect_timeout=30, application_name="etf-sim-pipeline")
+    # TCP keepalives stop idle-connection drops while a long run is busy downloading.
+    return psycopg.connect(db_url, connect_timeout=30, application_name="etf-sim-pipeline",
+                           keepalives=1, keepalives_idle=30, keepalives_interval=10, keepalives_count=5)
 
 
 def _json(v):
@@ -63,8 +69,25 @@ def upsert(cur: psycopg.Cursor, table: str, cols: Sequence[str], key: Sequence[s
 
 
 class Loader:
-    def __init__(self, conn: psycopg.Connection):
+    def __init__(self, conn: psycopg.Connection, db_url: str | None = None):
         self.conn = conn
+        self.db_url = db_url
+
+    def ensure_connected(self) -> None:
+        """Reconnect if the server dropped the connection (a full run takes most of an hour).
+        Called between ETFs, when no transaction is open, so nothing is lost."""
+        try:
+            self.conn.execute("select 1")
+            self.conn.commit()
+        except psycopg.OperationalError as e:
+            if self.db_url is None:
+                raise
+            log.warning("database connection lost (%s); reconnecting", str(e).strip().splitlines()[0])
+            try:
+                self.conn.close()
+            except Exception:
+                pass
+            self.conn = connect(self.db_url)
 
     # --- runs and bookkeeping -------------------------------------------------
 
@@ -79,6 +102,9 @@ class Loader:
 
     def mappings(self) -> Mappings:
         rows = self.conn.execute("select kind, issuer, source_label, normalised_label, iso_code from label_mappings").fetchall()
+        # End the implicit read transaction, so start_run's transaction() really commits
+        # (inside an open transaction it would only be a savepoint, lost if the connection drops).
+        self.conn.commit()
         return {(k, i, s.lower()): (n, iso) for k, i, s, n, iso in rows}
 
     def known_file(self, isin: str | None, file_type: str, sha256: str) -> bool:
