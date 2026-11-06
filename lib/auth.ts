@@ -20,12 +20,18 @@ export type User = {
  * any other Supabase read in a component so those reads are request-time too.
  */
 export async function getCurrentUser(): Promise<User> {
+  const user = await getOptionalUser()
+  if (!user) redirect("/login")
+  return user
+}
+
+/** The signed-in user, or null for visitors without an account (the builder and analysis
+ * work signed out). Same verification and prerendering rules as getCurrentUser(). */
+export async function getOptionalUser(): Promise<User | null> {
   await connection()
   const supabase = await createClient()
   const { data, error } = await supabase.auth.getClaims()
-  if (error || !data?.claims?.sub) {
-    redirect("/login")
-  }
+  if (error || !data?.claims?.sub) return null
   return { id: data.claims.sub, email: (data.claims.email as string | undefined) ?? null }
 }
 

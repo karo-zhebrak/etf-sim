@@ -1,9 +1,9 @@
 import Link from "next/link"
+import { connection } from "next/server"
 import { Suspense } from "react"
 
 import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getCurrentUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 
 export default function Home() {
@@ -16,6 +16,9 @@ export default function Home() {
           performance, where it invests and how the funds move together. Everything here is a
           simulation for learning. It is not investment advice, and past performance does not
           predict future returns.
+        </p>
+        <p className="max-w-prose text-sm text-muted-foreground">
+          No account needed to try it. Sign in or create a free account to save your portfolios.
         </p>
         <div className="flex flex-wrap gap-2">
           <Link href="/builder" className={buttonVariants()}>Start a portfolio</Link>
@@ -32,8 +35,8 @@ export default function Home() {
 const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" })
 
 async function DataStatus() {
-  // Runs as the signed-in user: these reads go through RLS.
-  await getCurrentUser()
+  // Market data is readable signed in or not (RLS); connection() keeps it request-time.
+  await connection()
   const supabase = await createClient()
   const [funds, latest] = await Promise.all([
     supabase.from("etfs").select("isin", { count: "exact", head: true }),

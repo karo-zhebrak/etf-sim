@@ -28,6 +28,7 @@ async function SavedBuilder({ params }: { params: PageProps<"/builder/[id]">["pa
     <Builder
       key={portfolio.id}
       etfOptions={etfOptions}
+      signedIn
       initial={{
         id: portfolio.id,
         name: portfolio.name,

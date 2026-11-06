@@ -1,6 +1,7 @@
 import "server-only"
 
-import { getCurrentUser } from "@/lib/auth"
+import { connection } from "next/server"
+
 import {
   type AssetClass, displayName, type Distribution, type EtfDetail, type EtfOption, type Replication,
 } from "@/lib/etf-types"
@@ -11,7 +12,8 @@ import { createClient } from "@/lib/supabase/server"
 
 /** All ETFs available for selection, sorted by name, with their latest TER. */
 export async function listEtfs(): Promise<EtfOption[]> {
-  await getCurrentUser()
+  // Market data is readable signed in or not (RLS); connection() keeps it request-time.
+  await connection()
   const supabase = await createClient()
   const [etfs, facts] = await Promise.all([
     supabase.from("etfs").select("isin, name, primary_ticker, asset_class, share_class_currency"),

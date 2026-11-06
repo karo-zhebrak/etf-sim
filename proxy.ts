@@ -3,8 +3,11 @@ import { NextResponse, type NextRequest } from "next/server"
 
 import { supabasePublishableKey, supabaseUrl } from "@/lib/supabase/env"
 
-// Routes reachable without signing in. Everything else requires a session.
-const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/auth"]
+// The app works without an account (home, a new portfolio in the builder, all analysis).
+// Signing in is needed for these: the user's saved portfolios, account and password change.
+const SIGNED_IN_ONLY = ["/portfolios", "/account", "/update-password"]
+/** A saved portfolio, e.g. /builder/<uuid>. The new-portfolio builder (/builder) is open. */
+const isSavedPortfolio = (path: string) => /^\/builder\/[^/]+/.test(path)
 // Signed-in users visiting these are sent to the app instead.
 const SIGNED_OUT_ONLY = ["/login", "/signup", "/forgot-password"]
 
@@ -12,8 +15,8 @@ const matches = (path: string, prefixes: string[]) =>
   prefixes.some((p) => path === p || path.startsWith(`${p}/`))
 
 /**
- * Refreshes the Supabase session cookie on every request and redirects signed-out
- * visitors to /login. This is a convenience gate only: Server Actions, Route Handlers
+ * Refreshes the Supabase session cookie on every request and sends signed-out visitors
+ * to /login for the signed-in-only areas. This is a convenience gate only: Server Actions, Route Handlers
  * and data reads check the session themselves, and RLS protects the data.
  */
 export async function proxy(request: NextRequest) {
@@ -45,9 +48,9 @@ export async function proxy(request: NextRequest) {
     return redirect
   }
 
-  if (!signedIn && !matches(path, PUBLIC_PATHS)) {
+  if (!signedIn && (matches(path, SIGNED_IN_ONLY) || isSavedPortfolio(path))) {
     const url = new URL("/login", request.url)
-    if (path !== "/") url.searchParams.set("next", path + request.nextUrl.search)
+    url.searchParams.set("next", path + request.nextUrl.search)
     return redirectTo(url)
   }
   if (signedIn && matches(path, SIGNED_OUT_ONLY)) {

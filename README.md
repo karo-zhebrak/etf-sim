@@ -2,7 +2,7 @@
 
 **An educational web app for UK investors: build a simulated portfolio of up to five ETFs and see how it would have behaved: its performance, where it invests, what it holds and how its funds move together.**
 
-Live at **[etfportfoliosimulator.com](https://etfportfoliosimulator.com)** (free account required).
+Live at **[etfportfoliosimulator.com](https://etfportfoliosimulator.com)**. No account needed to try it; sign in or create a free account to save your portfolios.
 
 > **Educational, not advice.** Everything in the app is a simulation for learning. It doesn't recommend investments, and past performance does not predict future returns. No real money or trades are involved.
 
@@ -24,7 +24,7 @@ Live at **[etfportfoliosimulator.com](https://etfportfoliosimulator.com)** (free
    | **Correlation matrix** | How closely the funds move together, from −1 to +1 |
    | **Combined performance** | What your amount would have grown to, against MSCI World |
 
-5. **Save portfolios** to your account, and reopen, edit or delete them from **My Portfolios**.
+5. **Save portfolios** (free account needed) and reopen, edit or delete them from **My Portfolios**. If you build a portfolio before signing in, it's kept and waiting for you after you sign in.
 
 Every chart has hover values, a table view and its data sources. Performance is shown after each fund's ongoing charge (TER), with income reinvested.
 
@@ -37,7 +37,7 @@ ECB euro reference rates          ├─▶  Python data pipeline  ─▶  Supab
 ```
 
 - **Data pipeline** ([`pipeline/`](pipeline/README.md)): a plain Python job that runs on the 10th of each month. It downloads each fund's data files and factsheets, parses and validates them, and loads them into Postgres. It keeps history (every snapshot is dated), flags suspect issuer data rather than silently loading it, and stores raw files privately in Supabase Storage.
-- **Database** ([`supabase/migrations/`](supabase/migrations)): prices, facts, holdings, exposures, FX rates and users' portfolios. Row-level security means signed-in users can read market data, but each person can only see and change their own portfolios.
+- **Database** ([`supabase/migrations/`](supabase/migrations)): prices, facts, holdings, exposures, FX rates and users' portfolios. Row-level security makes market data read-only for everyone (no account needed), and each signed-in person can only see and change their own portfolios.
 - **App:** Next.js (App Router) with Supabase Auth (email and password, with email confirmation). The calculations live in small, unit-tested TypeScript modules in [`lib/`](lib):
   - `performance.ts`: normalising to 100, date ranges, buy-and-hold portfolio growth
   - `exposure.ts`: combined country, region, sector and asset-class weights

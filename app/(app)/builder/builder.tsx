@@ -1,9 +1,10 @@
 "use client"
 
 import { Check } from "lucide-react"
+import Link from "next/link"
 import { useEffect, useId, useRef, useState, useTransition } from "react"
 
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -44,6 +45,9 @@ const STEPS: { id: Step; label: string }[] = [
 
 const CURRENCY_SYMBOL: Record<Currency, string> = { GBP: "£", EUR: "€", USD: "$" }
 const storageKey = (id: string | null) => `etfsim:builder-draft:${id ?? "new"}`
+/** A new, unsaved draft lives in localStorage so it survives signing up (the confirmation
+ * link opens a new tab); edits to a saved portfolio stay per tab in sessionStorage. */
+const draftStore = (id: string | null): Storage => (id === null ? window.localStorage : window.sessionStorage)
 const sameDraft = (a: Draft, b: Draft) =>
   a.amount === b.amount && a.currency === b.currency && a.etfs.length === b.etfs.length &&
   a.etfs.every((e, i) => e.isin === b.etfs[i].isin && e.weight === b.etfs[i].weight)
@@ -57,7 +61,7 @@ function formatAmountInput(amount: number | null): string {
 
 function readStored(id: string | null): { draft: Draft; step: Step } | null {
   try {
-    const raw = window.sessionStorage.getItem(storageKey(id))
+    const raw = draftStore(id).getItem(storageKey(id))
     if (!raw) return null
     const parsed = JSON.parse(raw)
     // Drafts stored before ETF selection existed have no etfs list.
@@ -68,7 +72,12 @@ function readStored(id: string | null): { draft: Draft; step: Step } | null {
 }
 
 /** Step-based portfolio builder. Edits a draft in the browser; "Save Portfolio" writes it. */
-export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfOptions: EtfOption[] }) {
+export function Builder({ initial, etfOptions, signedIn }: {
+  initial: BuilderInitial
+  etfOptions: EtfOption[]
+  /** Visitors can build and analyse; saving asks them to sign in first. */
+  signedIn: boolean
+}) {
   const [id, setId] = useState(initial.id)
   const [name, setName] = useState(initial.name)
   const [savedAt, setSavedAt] = useState(initial.updatedAt)
@@ -79,6 +88,7 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
   const [step, setStep] = useState<Step>("amount")
   const [restored, setRestored] = useState(false)
   const [saveOpen, setSaveOpen] = useState(false)
+  const [signInOpen, setSignInOpen] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [justSaved, setJustSaved] = useState(false)
   const [allocationNotice, setAllocationNotice] = useState<string | null>(null)
@@ -115,9 +125,9 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
     if (!hydrated.current) return
     try {
       if (dirty && !(id === null && isEmptyDraft(draft))) {
-        window.sessionStorage.setItem(storageKey(id), JSON.stringify({ draft, step }))
+        draftStore(id).setItem(storageKey(id), JSON.stringify({ draft, step }))
       } else {
-        window.sessionStorage.removeItem(storageKey(id))
+        draftStore(id).removeItem(storageKey(id))
       }
     } catch {
       // Storage unavailable (private mode): the draft still lives in memory.
@@ -136,6 +146,7 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
       const link = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null
       if (!link || link.target === "_blank" || link.hasAttribute("download")) return
+      if (link.closest("[data-keeps-draft]")) return // the draft is stored and restored afterwards
       const url = new URL(link.href, window.location.href)
       if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return
       if (!window.confirm("You have unsaved changes to this portfolio. Leave without saving?")) {
@@ -220,11 +231,16 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
         id, name: nameToSave, amount: draft.amount, currency: draft.currency, etfs: draft.etfs,
       })
       if (!result.ok) {
+        if (result.needsSignIn) {
+          setSaveOpen(false)
+          setSignInOpen(true)
+          return
+        }
         setSaveError(result.error)
         return
       }
       try {
-        window.sessionStorage.removeItem(storageKey(id))
+        draftStore(id).removeItem(storageKey(id))
       } catch {}
       if (id === null) {
         // Give the new portfolio its permanent URL without remounting the builder.
@@ -253,7 +269,7 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <Button onClick={() => (id === null ? setSaveOpen(true) : save(name))} disabled={pending}>
+          <Button onClick={() => (!signedIn ? setSignInOpen(true) : id === null ? setSaveOpen(true) : save(name))} disabled={pending}>
             {pending ? "Saving…" : "Save Portfolio"}
           </Button>
           <p role="status" className="text-xs text-muted-foreground">
@@ -320,6 +336,9 @@ export function Builder({ initial, etfOptions }: { initial: BuilderInitial; etfO
       ))}
 
       <SaveDialog open={saveOpen} onOpenChange={setSaveOpen} pending={pending} error={saveError} onSave={save} />
+      {/* Next.js keeps this page alive across the sign-in round trip, so the prompt must
+          close itself and never show once the user is signed in. */}
+      <SignInToSaveDialog open={signInOpen && !signedIn} onOpenChange={setSignInOpen} />
     </div>
   )
 }
@@ -490,6 +509,32 @@ function SaveDialog({ open, onOpenChange, pending, error, onSave }: {
             <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save"}</Button>
           </DialogFooter>
         </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/** Saving needs an account. The draft stays in this browser, so signing in (or confirming a
+ * new account by email) brings the user back to /builder with their choices restored. */
+function SignInToSaveDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent data-keeps-draft>
+        <DialogHeader>
+          <DialogTitle>Sign in to save your portfolio</DialogTitle>
+          <DialogDescription>
+            Saving needs a free account, so you can come back to your portfolios later. Your choices are kept in this
+            browser and will be here when you return.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Link href="/login?next=/builder" onClick={() => onOpenChange(false)} className={buttonVariants({ variant: "outline" })}>
+            Sign in
+          </Link>
+          <Link href="/signup?next=/builder" onClick={() => onOpenChange(false)} className={buttonVariants()}>
+            Create a free account
+          </Link>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

@@ -1,7 +1,5 @@
 "use server"
 
-import { redirect } from "next/navigation"
-
 import type { EtfDetail } from "@/lib/etf-types"
 import type { FundHoldings } from "@/lib/constituents"
 import type { FundExposure } from "@/lib/exposure"
@@ -22,7 +20,7 @@ export type SaveInput = {
 
 export type SaveResult =
   | { ok: true; id: string; name: string; updatedAt: string }
-  | { ok: false; error: string }
+  | { ok: false; error: string; needsSignIn?: boolean }
 
 const ISIN_RE = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/
 
@@ -45,10 +43,11 @@ export async function savePortfolio(input: SaveInput): Promise<SaveResult> {
     return { ok: false, error: "The ETF selection isn't valid. Please reselect your ETFs." }
   }
 
-  // Authorize inside the action; RLS also limits every statement to the user's own rows.
+  // Saving needs an account (the builder itself works signed out). Authorize inside the
+  // action; RLS also limits every statement to the user's own rows.
   const supabase = await createClient()
   const { data: claims } = await supabase.auth.getClaims()
-  if (!claims?.claims) redirect("/login")
+  if (!claims?.claims) return { ok: false, error: "Sign in to save your portfolio.", needsSignIn: true }
 
   const { data, error } = await supabase
     .rpc("save_portfolio", {
@@ -69,9 +68,6 @@ export async function savePortfolio(input: SaveInput): Promise<SaveResult> {
 
 /** Details for the ETF detail view, loaded when the user opens it. */
 export async function loadEtfDetail(isin: string): Promise<EtfDetail | null> {
-  const supabase = await createClient()
-  const { data: claims } = await supabase.auth.getClaims()
-  if (!claims?.claims) redirect("/login")
   return getEtfDetail(String(isin))
 }
 
@@ -82,9 +78,8 @@ export type SeriesPayload = { key: string; dates: string[]; values: number[] }
 export async function loadPriceSeries(isins: string[], currency: Currency): Promise<SeriesPayload[] | null> {
   const list = Array.isArray(isins) ? isins.filter((i) => ISIN_RE.test(i)) : []
   if (list.length === 0 || list.length > MAX_ETFS || !CURRENCIES.includes(currency)) return null
+  // Market data: readable without an account (RLS allows anon reads, never writes).
   const supabase = await createClient()
-  const { data: claims } = await supabase.auth.getClaims()
-  if (!claims?.claims) redirect("/login")
   const { data, error } = await supabase.rpc("price_series", { p_isins: list, p_currency: currency })
   if (error || !data) return null
   return (data as { series: string; dates: string[]; vals: (number | string)[] }[]).map((r) => ({
@@ -98,9 +93,6 @@ export async function loadPriceSeries(isins: string[], currency: Currency): Prom
 export async function loadExposures(isins: string[]): Promise<FundExposure[] | null> {
   const list = Array.isArray(isins) ? isins.filter((i) => ISIN_RE.test(i)).slice(0, MAX_ETFS) : []
   if (list.length === 0) return null
-  const supabase = await createClient()
-  const { data: claims } = await supabase.auth.getClaims()
-  if (!claims?.claims) redirect("/login")
   try {
     return await getExposures(list)
   } catch {
@@ -112,9 +104,6 @@ export async function loadExposures(isins: string[]): Promise<FundExposure[] | n
 export async function loadTopHoldings(isins: string[]): Promise<FundHoldings[] | null> {
   const list = Array.isArray(isins) ? isins.filter((i) => ISIN_RE.test(i)).slice(0, MAX_ETFS) : []
   if (list.length === 0) return null
-  const supabase = await createClient()
-  const { data: claims } = await supabase.auth.getClaims()
-  if (!claims?.claims) redirect("/login")
   try {
     return await getTopHoldings(list)
   } catch {

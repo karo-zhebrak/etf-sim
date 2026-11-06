@@ -57,7 +57,9 @@ export async function signUp(_: FormState, formData: FormData): Promise<FormStat
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${await siteOrigin()}/auth/callback?next=/` },
+    options: {
+      emailRedirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent(safeNextPath(formData.get("next")))}`,
+    },
   })
   if (error) {
     console.error("signUp failed:", error.status, error.code, error.message)
@@ -68,7 +70,7 @@ export async function signUp(_: FormState, formData: FormData): Promise<FormStat
     return { error: "We couldn't create your account. Please try again.", email }
   }
   // With email confirmation off, Supabase signs the user straight in.
-  if (data.session) redirect("/")
+  if (data.session) redirect(safeNextPath(formData.get("next")))
   // Same message whether or not the address is already registered, so the form
   // doesn't reveal which emails have accounts.
   return { message: `We've sent a confirmation link to ${email}. Open it to finish creating your account.` }

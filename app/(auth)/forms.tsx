@@ -83,19 +83,23 @@ export function LoginForm() {
         <Link href="/forgot-password" className="text-muted-foreground underline-offset-4 hover:underline">
           Forgotten your password?
         </Link>
-        <Link href="/signup" className="underline-offset-4 hover:underline">Create an account</Link>
+        <Link href={params.get("next") ? `/signup?next=${encodeURIComponent(params.get("next")!)}` : "/signup"}
+              className="underline-offset-4 hover:underline">Create an account</Link>
       </div>
     </form>
   )
 }
 
 export function SignupForm() {
+  const params = useSearchParams()
+  const next = params.get("next")
   const [state, action, pending] = useActionState(signUp, initial)
   if (state.message) {
     return <Feedback state={state} />
   }
   return (
     <form action={action} className="space-y-4">
+      <input type="hidden" name="next" value={next ?? "/"} />
       <EmailField defaultValue={state.email} />
       <PasswordField autoComplete="new-password" hint="At least 8 characters." />
       <Feedback state={state} />
@@ -103,7 +107,8 @@ export function SignupForm() {
         {pending ? "Creating account…" : "Create account"}
       </Button>
       <p className="text-center text-sm text-muted-foreground">
-        Already have an account? <Link href="/login" className="text-foreground underline-offset-4 hover:underline">Sign in</Link>
+        Already have an account?{" "}
+        <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="text-foreground underline-offset-4 hover:underline">Sign in</Link>
       </p>
     </form>
   )

@@ -2,8 +2,8 @@ import Link from "next/link"
 import { Suspense } from "react"
 
 import { AppNav } from "@/components/app-nav"
-import { Button } from "@/components/ui/button"
-import { getCurrentUser } from "@/lib/auth"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { getOptionalUser } from "@/lib/auth"
 
 import { signOut } from "../(auth)/actions"
 
@@ -35,7 +35,15 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
 }
 
 async function UserMenu() {
-  const user = await getCurrentUser()
+  const user = await getOptionalUser()
+  if (!user) {
+    return (
+      <div className="flex items-center gap-2 text-sm">
+        <Link href="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>Sign in</Link>
+        <Link href="/signup" className={buttonVariants({ size: "sm" })}>Create account</Link>
+      </div>
+    )
+  }
   return (
     <div className="flex items-center gap-3 text-sm">
       <span className="hidden max-w-56 truncate text-muted-foreground lg:inline">{user.email}</span>
